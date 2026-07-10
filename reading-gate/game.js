@@ -1,0 +1,602 @@
+const STORAGE_KEY = "reading-gate-v1";
+
+const defaultState = {
+  books: [
+    {
+      id: "book-sample",
+      title: "静かな森の読書術",
+      author: "妖怪INFJ",
+      coverImage: "",
+      totalPages: 300,
+      currentPage: 156,
+      status: "reading",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    },
+  ],
+  sessions: [
+    {
+      id: "session-sample",
+      bookId: "book-sample",
+      date: new Date().toISOString(),
+      minutes: 190,
+      startPage: 120,
+      endPage: 156,
+      pages: 36,
+      createdAt: new Date().toISOString(),
+    },
+  ],
+  memos: [
+    {
+      id: "memo-sample",
+      bookId: "book-sample",
+      date: new Date().toISOString(),
+      page: 145,
+      text: "少しだけでも開くと、続きは自然に読める。",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    },
+  ],
+  settings: {
+    gateApps: ["X", "Instagram", "YouTube"],
+    readingMinutes: 15,
+    shortReadingMinutes: 3,
+    snsMinutes: 5,
+  },
+};
+
+let state = loadState();
+let activeScreen = "home";
+let selectedMemoBookId = state.books[0]?.id || "";
+let activeRange = 7;
+let pendingMood = null;
+let timer = {
+  mode: "reading",
+  totalSeconds: state.settings.readingMinutes * 60,
+  remainingSeconds: state.settings.readingMinutes * 60,
+  running: false,
+  interval: null,
+  startedAt: null,
+};
+let snsTimer = {
+  remainingSeconds: state.settings.snsMinutes * 60,
+  interval: null,
+};
+
+const elements = {
+  screenTitle: document.getElementById("screen-title"),
+  yokai: document.getElementById("yokai"),
+  yokaiFace: document.getElementById("yokai-face"),
+  yokaiHands: document.getElementById("yokai-hands"),
+  yokaiMessage: document.getElementById("yokai-message"),
+  homeMetrics: document.getElementById("home-metrics"),
+  bookForm: document.getElementById("book-form"),
+  coverInput: document.getElementById("cover-input"),
+  titleInput: document.getElementById("title-input"),
+  authorInput: document.getElementById("author-input"),
+  totalInput: document.getElementById("total-input"),
+  currentInput: document.getElementById("current-input"),
+  bookList: document.getElementById("book-list"),
+  timerLabel: document.getElementById("timer-label"),
+  timerTime: document.getElementById("timer-time"),
+  timerBook: document.getElementById("timer-book"),
+  timerStart: document.getElementById("timer-start"),
+  timerFinish: document.getElementById("timer-finish"),
+  sessionForm: document.getElementById("session-form"),
+  startPageInput: document.getElementById("start-page-input"),
+  endPageInput: document.getElementById("end-page-input"),
+  memoInput: document.getElementById("memo-input"),
+  memoBookTabs: document.getElementById("memo-book-tabs"),
+  memoList: document.getElementById("memo-list"),
+  minutesChart: document.getElementById("minutes-chart"),
+  pagesChart: document.getElementById("pages-chart"),
+  settingsForm: document.getElementById("settings-form"),
+  readingMinutes: document.getElementById("reading-minutes"),
+  shortMinutes: document.getElementById("short-minutes"),
+  snsMinutes: document.getElementById("sns-minutes"),
+  gateDialog: document.getElementById("gate-dialog"),
+  snsDialog: document.getElementById("sns-dialog"),
+  snsTime: document.getElementById("sns-time"),
+  snsMessage: document.getElementById("sns-message"),
+  snsActions: document.getElementById("sns-actions"),
+};
+
+function loadState() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
+    if (!saved) return structuredClone(defaultState);
+    return {
+      books: saved.books || [],
+      sessions: saved.sessions || [],
+      memos: saved.memos || [],
+      settings: { ...defaultState.settings, ...(saved.settings || {}) },
+    };
+  } catch {
+    return structuredClone(defaultState);
+  }
+}
+
+function saveState() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+function uid(prefix) {
+  return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function formatMinutes(totalMinutes) {
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  if (hours <= 0) return `${minutes}分`;
+  return `${hours}時間${minutes}分`;
+}
+
+function formatTimer(seconds) {
+  const safeSeconds = Math.max(0, Math.ceil(seconds));
+  const minutes = Math.floor(safeSeconds / 60);
+  const rest = safeSeconds % 60;
+  return `${String(minutes).padStart(2, "0")}:${String(rest).padStart(2, "0")}`;
+}
+
+function dateKey(dateValue) {
+  const date = new Date(dateValue);
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
+function shortDate(dateValue) {
+  const date = new Date(dateValue);
+  return `${date.getMonth() + 1}/${date.getDate()}`;
+}
+
+function totals() {
+  const minutes = state.sessions.reduce((sum, session) => sum + Number(session.minutes || 0), 0);
+  const pages = state.sessions.reduce((sum, session) => sum + Number(session.pages || 0), 0);
+  const finished = state.books.filter((book) => book.status === "finished").length;
+  return { minutes, pages, finished, memos: state.memos.length };
+}
+
+function setYokai(mood) {
+  const moods = {
+    normal: "静かに、そばにいる。",
+    reading: "いいね。少しだけ、ページを開こう。",
+    gate: "……読む？",
+    done: "積み上がった。えらい。",
+  };
+  elements.yokaiMessage.textContent = moods[mood] || moods.normal;
+  elements.yokai.classList.remove("mood-normal", "mood-reading", "mood-gate", "mood-done");
+  elements.yokai.classList.add(`mood-${mood}`);
+  elements.yokai.classList.toggle("pulling", mood === "gate");
+}
+
+function navigate(screen) {
+  activeScreen = screen;
+  document.querySelectorAll(".screen").forEach((node) => {
+    node.classList.toggle("active", node.id === `${screen}-screen`);
+  });
+  document.querySelectorAll("[data-nav]").forEach((button) => {
+    button.classList.toggle("active", button.dataset.nav === screen);
+  });
+  const screenNode = document.getElementById(`${screen}-screen`);
+  elements.screenTitle.textContent = screenNode?.dataset.title || "読書ゲート";
+  setYokai(pendingMood || (screen === "timer" ? "reading" : "normal"));
+  pendingMood = null;
+  render();
+}
+
+function render() {
+  renderHome();
+  renderBooks();
+  renderTimerBooks();
+  renderMemos();
+  renderGraphs();
+  renderSettings();
+}
+
+function renderHome() {
+  const summary = totals();
+  const metrics = [
+    ["📚 読書時間", formatMinutes(summary.minutes)],
+    ["📖 読んだページ", `${summary.pages.toLocaleString()}ページ`],
+    ["📕 読了した本", `${summary.finished}冊`],
+    ["✏️ 読書メモ", `${summary.memos}個`],
+  ];
+  elements.homeMetrics.replaceChildren(
+    ...metrics.map(([label, value]) => {
+      const card = document.createElement("article");
+      card.className = "metric-card";
+      card.innerHTML = `<span>${label}</span><strong>${value}</strong>`;
+      return card;
+    }),
+  );
+}
+
+function renderBooks() {
+  if (!state.books.length) {
+    elements.bookList.innerHTML = `<div class="empty">最初の本を登録しよう。</div>`;
+    return;
+  }
+
+  elements.bookList.replaceChildren(
+    ...state.books.map((book) => {
+      const bookSessions = state.sessions.filter((session) => session.bookId === book.id);
+      const minutes = bookSessions.reduce((sum, session) => sum + Number(session.minutes || 0), 0);
+      const memoCount = state.memos.filter((memo) => memo.bookId === book.id).length;
+      const percent = Math.min(100, Math.round((book.currentPage / book.totalPages) * 100) || 0);
+      const card = document.createElement("article");
+      card.className = "book-card";
+      card.innerHTML = `
+        <div class="cover">${book.coverImage ? `<img alt="" src="${book.coverImage}">` : "📕"}</div>
+        <div>
+          <h3>${escapeHtml(book.title)}</h3>
+          <p class="book-meta">${escapeHtml(book.author || "著者未設定")} ・ ${book.status === "finished" ? "読了済み" : "読書中"}</p>
+          <div class="progress" aria-label="${percent}%"><span style="width:${percent}%"></span></div>
+          <p class="book-meta">${book.currentPage} / ${book.totalPages}ページ ・ ${percent}%</p>
+          <div class="book-stats">
+            <span>読書時間: ${formatMinutes(minutes)}</span>
+            <span>メモ: ${memoCount}個</span>
+          </div>
+        </div>
+      `;
+      return card;
+    }),
+  );
+}
+
+function renderTimerBooks() {
+  elements.timerBook.replaceChildren(
+    ...state.books.map((book) => {
+      const option = document.createElement("option");
+      option.value = book.id;
+      option.textContent = book.title;
+      return option;
+    }),
+  );
+
+  if (!state.books.length) {
+    const option = document.createElement("option");
+    option.textContent = "本棚で本を登録してください";
+    elements.timerBook.append(option);
+    elements.timerStart.disabled = true;
+    elements.timerFinish.disabled = true;
+  } else {
+    elements.timerStart.disabled = false;
+    elements.timerFinish.disabled = false;
+  }
+}
+
+function renderMemos() {
+  if (!state.books.length) {
+    elements.memoBookTabs.innerHTML = "";
+    elements.memoList.innerHTML = `<div class="empty">本を登録すると、ここに本ごとのメモが並びます。</div>`;
+    return;
+  }
+
+  if (!state.books.some((book) => book.id === selectedMemoBookId)) selectedMemoBookId = state.books[0].id;
+  elements.memoBookTabs.replaceChildren(
+    ...state.books.map((book) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = book.id === selectedMemoBookId ? "active" : "";
+      button.textContent = book.title;
+      button.addEventListener("click", () => {
+        selectedMemoBookId = book.id;
+        renderMemos();
+      });
+      return button;
+    }),
+  );
+
+  const memos = state.memos
+    .filter((memo) => memo.bookId === selectedMemoBookId)
+    .sort((a, b) => new Date(b.date) - new Date(a.date));
+
+  if (!memos.length) {
+    elements.memoList.innerHTML = `<div class="empty">この本のメモはまだありません。</div>`;
+    return;
+  }
+
+  elements.memoList.replaceChildren(
+    ...memos.map((memo) => {
+      const card = document.createElement("article");
+      card.className = "memo-card";
+      card.innerHTML = `
+        <time>${shortDate(memo.date)} ・ p.${memo.page || 0}</time>
+        <p>${escapeHtml(memo.text)}</p>
+      `;
+      return card;
+    }),
+  );
+}
+
+function renderGraphs() {
+  renderMinutesChart();
+  renderPagesChart();
+}
+
+function renderMinutesChart() {
+  const days = [];
+  const now = new Date();
+  for (let i = activeRange - 1; i >= 0; i -= 1) {
+    const date = new Date(now);
+    date.setDate(now.getDate() - i);
+    days.push({ key: dateKey(date), label: activeRange > 30 ? `${date.getMonth() + 1}月` : `${date.getMonth() + 1}/${date.getDate()}`, value: 0 });
+  }
+
+  state.sessions.forEach((session) => {
+    const bucket = days.find((day) => day.key === dateKey(session.date));
+    if (bucket) bucket.value += Number(session.minutes || 0);
+  });
+
+  drawBars(elements.minutesChart, days, "分");
+}
+
+function renderPagesChart() {
+  const months = [];
+  const now = new Date();
+  for (let i = 5; i >= 0; i -= 1) {
+    const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    months.push({ key: `${date.getFullYear()}-${date.getMonth()}`, label: `${date.getMonth() + 1}月`, value: 0 });
+  }
+
+  state.sessions.forEach((session) => {
+    const date = new Date(session.date);
+    const bucket = months.find((month) => month.key === `${date.getFullYear()}-${date.getMonth()}`);
+    if (bucket) bucket.value += Number(session.pages || 0);
+  });
+
+  drawBars(elements.pagesChart, months, "P");
+}
+
+function drawBars(container, items, suffix) {
+  const max = Math.max(1, ...items.map((item) => item.value));
+  const visibleItems = activeRange === 365 && items.length > 40 ? items.filter((_, index) => index % 14 === 0) : items;
+  container.style.setProperty("--bars", visibleItems.length);
+  container.replaceChildren(
+    ...visibleItems.map((item) => {
+      const bar = document.createElement("div");
+      bar.className = "bar";
+      bar.title = `${item.label}: ${item.value}${suffix}`;
+      bar.innerHTML = `
+        <div class="bar-fill" style="height:${Math.max(3, (item.value / max) * 150)}px"></div>
+        <div class="bar-label">${item.value ? `${item.value}${suffix}` : item.label}</div>
+      `;
+      return bar;
+    }),
+  );
+}
+
+function renderSettings() {
+  elements.readingMinutes.value = state.settings.readingMinutes;
+  elements.shortMinutes.value = state.settings.shortReadingMinutes;
+  elements.snsMinutes.value = state.settings.snsMinutes;
+  elements.settingsForm.querySelectorAll("[name='gateApp']").forEach((input) => {
+    input.checked = state.settings.gateApps.includes(input.value);
+  });
+}
+
+function startReadingTimer(minutes = state.settings.readingMinutes) {
+  clearInterval(timer.interval);
+  timer = {
+    mode: "reading",
+    totalSeconds: minutes * 60,
+    remainingSeconds: minutes * 60,
+    running: false,
+    interval: null,
+    startedAt: null,
+  };
+  elements.sessionForm.classList.add("hidden");
+  elements.timerLabel.textContent = "読書中";
+  elements.timerStart.textContent = "開始";
+  updateTimerDisplay();
+  navigate("timer");
+  setYokai("reading");
+}
+
+function toggleTimer() {
+  if (!state.books.length) return;
+  if (timer.running) {
+    clearInterval(timer.interval);
+    timer.running = false;
+    elements.timerStart.textContent = "再開";
+    return;
+  }
+  timer.running = true;
+  timer.startedAt = timer.startedAt || Date.now();
+  elements.timerStart.textContent = "一時停止";
+  timer.interval = setInterval(() => {
+    timer.remainingSeconds -= 1;
+    updateTimerDisplay();
+    if (timer.remainingSeconds <= 0) finishTimer();
+  }, 1000);
+}
+
+function finishTimer() {
+  clearInterval(timer.interval);
+  timer.running = false;
+  timer.remainingSeconds = Math.max(0, timer.remainingSeconds);
+  elements.timerStart.textContent = "再開";
+  elements.sessionForm.classList.remove("hidden");
+  const book = state.books.find((item) => item.id === elements.timerBook.value) || state.books[0];
+  if (book) {
+    elements.startPageInput.value = book.currentPage;
+    elements.endPageInput.value = Math.min(book.totalPages, book.currentPage + 10);
+  }
+  updateTimerDisplay();
+}
+
+function updateTimerDisplay() {
+  elements.timerTime.textContent = formatTimer(timer.remainingSeconds);
+}
+
+function saveSession(event) {
+  event.preventDefault();
+  const book = state.books.find((item) => item.id === elements.timerBook.value);
+  if (!book) return;
+  const startPage = Math.max(0, Number(elements.startPageInput.value || book.currentPage));
+  const endPage = Math.max(startPage, Number(elements.endPageInput.value || startPage));
+  const pages = Math.max(0, endPage - startPage);
+  const minutes = Math.max(1, Math.round((timer.totalSeconds - timer.remainingSeconds) / 60) || Math.round(timer.totalSeconds / 60));
+  const now = new Date().toISOString();
+
+  state.sessions.push({
+    id: uid("session"),
+    bookId: book.id,
+    date: now,
+    minutes,
+    startPage,
+    endPage,
+    pages,
+    createdAt: now,
+  });
+
+  book.currentPage = Math.min(book.totalPages, endPage);
+  book.status = book.currentPage >= book.totalPages ? "finished" : "reading";
+  book.updatedAt = now;
+
+  const text = elements.memoInput.value.trim();
+  if (text) {
+    state.memos.push({
+      id: uid("memo"),
+      bookId: book.id,
+      date: now,
+      page: endPage,
+      text,
+      createdAt: now,
+      updatedAt: now,
+    });
+  }
+
+  selectedMemoBookId = book.id;
+  saveState();
+  elements.memoInput.value = "";
+  elements.sessionForm.classList.add("hidden");
+  pendingMood = "done";
+  render();
+  navigate("home");
+}
+
+function addBook(event) {
+  event.preventDefault();
+  const totalPages = Math.max(1, Number(elements.totalInput.value || 1));
+  const currentPage = Math.min(totalPages, Math.max(0, Number(elements.currentInput.value || 0)));
+  const now = new Date().toISOString();
+  const book = {
+    id: uid("book"),
+    title: elements.titleInput.value.trim(),
+    author: elements.authorInput.value.trim(),
+    coverImage: elements.coverInput.value.trim(),
+    totalPages,
+    currentPage,
+    status: currentPage >= totalPages ? "finished" : "reading",
+    createdAt: now,
+    updatedAt: now,
+  };
+  state.books.unshift(book);
+  selectedMemoBookId = book.id;
+  saveState();
+  elements.bookForm.reset();
+  elements.totalInput.value = 300;
+  elements.currentInput.value = 0;
+  render();
+}
+
+function saveSettings(event) {
+  event.preventDefault();
+  state.settings = {
+    gateApps: [...elements.settingsForm.querySelectorAll("[name='gateApp']:checked")].map((input) => input.value),
+    readingMinutes: Math.max(1, Number(elements.readingMinutes.value || 15)),
+    shortReadingMinutes: Math.max(1, Number(elements.shortMinutes.value || 3)),
+    snsMinutes: Math.max(1, Number(elements.snsMinutes.value || 5)),
+  };
+  saveState();
+  resetTimerLength();
+  setYokai("done");
+  render();
+}
+
+function resetTimerLength() {
+  if (timer.running) return;
+  timer.totalSeconds = state.settings.readingMinutes * 60;
+  timer.remainingSeconds = timer.totalSeconds;
+  updateTimerDisplay();
+}
+
+function openGate() {
+  setYokai("gate");
+  elements.gateDialog.showModal();
+}
+
+function handleGateAction(action) {
+  elements.gateDialog.close();
+  if (action === "read") startReadingTimer(state.settings.readingMinutes);
+  if (action === "short") startReadingTimer(state.settings.shortReadingMinutes);
+  if (action === "sns") startSnsTimer();
+}
+
+function startSnsTimer() {
+  clearInterval(snsTimer.interval);
+  snsTimer.remainingSeconds = state.settings.snsMinutes * 60;
+  elements.snsActions.classList.add("hidden");
+  elements.snsMessage.textContent = "終わったら、もう一度だけ聞くね。";
+  elements.snsTime.textContent = formatTimer(snsTimer.remainingSeconds);
+  elements.snsDialog.showModal();
+  snsTimer.interval = setInterval(() => {
+    snsTimer.remainingSeconds -= 1;
+    elements.snsTime.textContent = formatTimer(snsTimer.remainingSeconds);
+    if (snsTimer.remainingSeconds <= 0) {
+      clearInterval(snsTimer.interval);
+      elements.snsMessage.textContent = "もう少し見る？ それとも読む？";
+      elements.snsActions.classList.remove("hidden");
+    }
+  }, 1000);
+}
+
+function handleSnsAction(action) {
+  elements.snsDialog.close();
+  if (action === "read") startReadingTimer(state.settings.readingMinutes);
+  if (action === "extend") startSnsTimer();
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+document.querySelectorAll("[data-nav]").forEach((button) => {
+  button.addEventListener("click", () => navigate(button.dataset.nav));
+});
+
+document.querySelectorAll("[data-start-reading]").forEach((button) => {
+  button.addEventListener("click", () => startReadingTimer(state.settings.readingMinutes));
+});
+
+document.getElementById("open-gate").addEventListener("click", openGate);
+
+document.querySelectorAll("[data-gate-action]").forEach((button) => {
+  button.addEventListener("click", () => handleGateAction(button.dataset.gateAction));
+});
+
+document.querySelectorAll("[data-sns-action]").forEach((button) => {
+  button.addEventListener("click", () => handleSnsAction(button.dataset.snsAction));
+});
+
+document.querySelectorAll("#range-tabs button").forEach((button) => {
+  button.addEventListener("click", () => {
+    activeRange = Number(button.dataset.range);
+    document.querySelectorAll("#range-tabs button").forEach((item) => item.classList.toggle("active", item === button));
+    renderGraphs();
+  });
+});
+
+elements.bookForm.addEventListener("submit", addBook);
+elements.timerStart.addEventListener("click", toggleTimer);
+elements.timerFinish.addEventListener("click", finishTimer);
+elements.sessionForm.addEventListener("submit", saveSession);
+elements.settingsForm.addEventListener("submit", saveSettings);
+
+updateTimerDisplay();
+render();
