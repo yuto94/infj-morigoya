@@ -1,0 +1,768 @@
+:root {
+  color-scheme: light;
+  --bg: #fbfaf6;
+  --panel: #ffffff;
+  --panel-2: #f4f1e9;
+  --ink: #1f1d1a;
+  --muted: #6f6a61;
+  --line: #ded7c9;
+  --leaf: #6f8a64;
+  --gold: #9b7a42;
+  --ember: #b86440;
+  --water: #6e8d91;
+  --danger: #a65d55;
+  font-family: "Hiragino Sans", "Yu Gothic", "Meiryo", system-ui, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100svh;
+  background: var(--bg);
+  color: var(--ink);
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+button {
+  min-height: 42px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: #fff;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+button:hover,
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+button.primary,
+.gate-button {
+  border-color: #1f1d1a;
+  background: #1f1d1a;
+  color: #fff;
+}
+
+.app-shell {
+  width: min(100%, 980px);
+  min-height: 100svh;
+  margin: 0 auto;
+  padding: 18px 18px 96px;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.eyebrow {
+  margin: 0 0 4px;
+  color: var(--gold);
+  font-size: 13px;
+}
+
+h1,
+h2,
+p {
+  letter-spacing: 0;
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(26px, 5vw, 42px);
+}
+
+h2 {
+  margin: 0 0 14px;
+  font-size: 19px;
+}
+
+.yokai-stage {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  margin: 18px 0 20px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.home-yokai-image {
+  width: min(100%, 420px);
+  height: auto;
+  display: block;
+  border: 1px solid #cfc6b6;
+  border-radius: 4px;
+}
+
+.yokai {
+  position: relative;
+  width: 124px;
+  height: 128px;
+  display: grid;
+  place-items: center;
+  filter: drop-shadow(0 16px 16px rgba(0, 0, 0, 0.34));
+}
+
+.yokai.small {
+  width: 94px;
+  height: 104px;
+  margin: 0 auto;
+}
+
+.yokai-flame {
+  position: absolute;
+  left: 23px;
+  top: 9px;
+  width: 78px;
+  height: 92px;
+  border-radius: 52% 48% 50% 50% / 58% 55% 45% 42%;
+  background:
+    radial-gradient(circle at 47% 61%, rgba(255, 255, 255, 0.08) 0 3%, transparent 4%),
+    radial-gradient(circle at 50% 60%, #1d1d1b 0 44%, #070807 45% 78%, transparent 79%),
+    radial-gradient(circle at 36% 30%, rgba(255, 255, 255, 0.13), transparent 15%);
+  box-shadow:
+    inset -10px -13px 0 rgba(0, 0, 0, 0.42),
+    inset 8px 7px 0 rgba(255, 255, 255, 0.035);
+}
+
+.yokai-flame::before {
+  content: "";
+  position: absolute;
+  left: 31px;
+  top: -19px;
+  width: 28px;
+  height: 50px;
+  border-radius: 70% 25% 65% 32% / 72% 32% 68% 28%;
+  background: #050606;
+  transform: rotate(28deg);
+  box-shadow:
+    -12px 16px 0 -8px #060707,
+    10px 22px 0 -13px rgba(255, 255, 255, 0.18);
+}
+
+.yokai-flame::after {
+  content: "";
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: -4px;
+  height: 12px;
+  border-radius: 50%;
+  background: rgba(22, 17, 14, 0.55);
+  filter: blur(3px);
+}
+
+.yokai-face {
+  position: relative;
+  z-index: 1;
+  width: 58px;
+  height: 34px;
+  margin-top: 4px;
+}
+
+.eye {
+  position: absolute;
+  top: 4px;
+  width: 21px;
+  height: 25px;
+  border-radius: 50%;
+  background: #fbf7e8;
+  box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.12);
+}
+
+.eye::after {
+  content: "";
+  position: absolute;
+  left: 8px;
+  top: 10px;
+  width: 6px;
+  height: 7px;
+  border-radius: 50%;
+  background: #111;
+}
+
+.eye.left {
+  left: 4px;
+}
+
+.eye.right {
+  right: 4px;
+}
+
+.mouth {
+  position: absolute;
+  left: 25px;
+  top: 25px;
+  width: 8px;
+  height: 4px;
+  border-bottom: 2px solid #f4ecd2;
+  border-radius: 0 0 999px 999px;
+}
+
+.yokai-hands::before,
+.yokai-hands::after {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  top: 76px;
+  width: 30px;
+  height: 7px;
+  border-radius: 999px;
+  background: #070807;
+  transform-origin: center right;
+}
+
+.yokai-hands::before {
+  left: 8px;
+  transform: rotate(-31deg);
+}
+
+.yokai-hands::after {
+  right: 8px;
+  transform: rotate(31deg);
+  transform-origin: center left;
+}
+
+.yokai-feet::before,
+.yokai-feet::after {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  top: 99px;
+  width: 9px;
+  height: 24px;
+  border-radius: 999px;
+  background: #060707;
+}
+
+.yokai-feet::before {
+  left: 49px;
+  transform: rotate(4deg);
+}
+
+.yokai-feet::after {
+  right: 49px;
+  transform: rotate(-4deg);
+}
+
+.yokai-dust::before,
+.yokai-dust::after {
+  content: "";
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #0a0b0a;
+  box-shadow:
+    18px -28px 0 -1px #0a0b0a,
+    36px 12px 0 -2px #0a0b0a,
+    -20px 14px 0 -1px #0a0b0a,
+    -33px -18px 0 -2px #0a0b0a;
+}
+
+.yokai-dust::before {
+  left: 18px;
+  top: 37px;
+}
+
+.yokai-dust::after {
+  right: 18px;
+  top: 25px;
+}
+
+.pulling .yokai-hands::before {
+  left: -2px;
+  width: 45px;
+  transform: rotate(-20deg);
+}
+
+.pulling .yokai-hands::after {
+  right: -2px;
+  width: 45px;
+  transform: rotate(20deg);
+}
+
+.mood-reading .eye {
+  height: 27px;
+  transform: translateY(-2px);
+}
+
+.mood-reading .mouth {
+  left: 24px;
+  top: 24px;
+  width: 10px;
+  height: 7px;
+  border: 0;
+  border-bottom: 3px solid #f4ecd2;
+}
+
+.mood-gate .eye.left,
+.pulling .eye.left {
+  transform: translateX(-3px) scaleX(0.9);
+}
+
+.mood-gate .eye.right,
+.pulling .eye.right {
+  transform: translateX(-3px) scaleX(1.08);
+}
+
+.mood-gate .mouth,
+.pulling .mouth {
+  left: 26px;
+  top: 26px;
+  width: 6px;
+  height: 6px;
+  border: 2px solid #f4ecd2;
+  border-radius: 50%;
+}
+
+.mood-done .eye {
+  top: 1px;
+  width: 23px;
+  height: 28px;
+}
+
+.mood-done .mouth {
+  left: 22px;
+  top: 24px;
+  width: 14px;
+  height: 9px;
+  border: 0;
+  border-bottom: 3px solid #f4ecd2;
+}
+
+.mood-done .yokai-hands::before {
+  top: 63px;
+  transform: rotate(-62deg);
+}
+
+.mood-done .yokai-hands::after {
+  top: 63px;
+  transform: rotate(62deg);
+}
+
+.mood-done .yokai-dust::before {
+  box-shadow:
+    15px -32px 0 -1px var(--gold),
+    42px 4px 0 -2px var(--gold),
+    -23px 10px 0 -1px var(--gold),
+    -36px -20px 0 -2px var(--gold);
+}
+
+#yokai-message {
+  min-height: 24px;
+  margin: 0;
+  color: var(--muted);
+  text-align: center;
+}
+
+.screen {
+  display: none;
+}
+
+.screen.active {
+  display: block;
+}
+
+.metric-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.metric-card,
+.form-panel,
+.book-card,
+.timer-card,
+.memo-card,
+.chart-panel {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+}
+
+.metric-card {
+  min-height: 132px;
+  padding: 18px;
+}
+
+.metric-card span {
+  display: block;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.metric-card strong {
+  display: block;
+  margin-top: 12px;
+  font-size: clamp(27px, 5vw, 44px);
+  line-height: 1.1;
+}
+
+.quick-row,
+.timer-actions,
+.dialog-actions,
+.range-tabs {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.quick-row {
+  margin-top: 14px;
+}
+
+.quick-row button,
+.timer-actions button,
+.dialog-actions button {
+  flex: 1 1 150px;
+}
+
+.form-panel {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+label,
+legend {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+input,
+textarea,
+select {
+  width: 100%;
+  min-height: 42px;
+  margin-top: 6px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: #fff;
+  color: var(--ink);
+  padding: 9px 10px;
+}
+
+textarea {
+  resize: vertical;
+  line-height: 1.6;
+}
+
+fieldset {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+}
+
+.check input {
+  width: auto;
+  min-height: auto;
+  margin: 0;
+}
+
+.book-list,
+.memo-list {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.book-card {
+  display: grid;
+  grid-template-columns: 76px 1fr;
+  gap: 14px;
+  padding: 14px;
+}
+
+.cover {
+  width: 76px;
+  aspect-ratio: 3 / 4;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--panel-2);
+  color: var(--ink);
+  font-size: 26px;
+}
+
+.cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.book-card h3 {
+  margin: 0 0 4px;
+  font-size: 18px;
+}
+
+.book-meta {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.progress {
+  height: 10px;
+  margin: 10px 0;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--panel-2);
+}
+
+.progress span {
+  display: block;
+  height: 100%;
+  background: var(--leaf);
+}
+
+.book-stats {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.timer-card {
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+  padding: 24px 18px;
+}
+
+.timer-label {
+  margin: 0;
+  color: var(--muted);
+}
+
+.timer-time {
+  font-variant-numeric: tabular-nums;
+  font-size: clamp(56px, 16vw, 100px);
+  line-height: 1;
+}
+
+.timer-time.compact {
+  margin: 14px 0;
+  font-size: clamp(48px, 18vw, 78px);
+  text-align: center;
+}
+
+.hidden {
+  display: none !important;
+}
+
+.book-tabs {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+}
+
+.book-tabs button,
+.range-tabs button {
+  padding: 0 14px;
+  white-space: nowrap;
+}
+
+.book-tabs button.active,
+.range-tabs button.active,
+.bottom-nav button.active {
+  border-color: var(--gold);
+  background: var(--panel-2);
+}
+
+.memo-card {
+  padding: 14px;
+}
+
+.memo-card time {
+  display: block;
+  color: var(--gold);
+  font-size: 13px;
+}
+
+.memo-card p {
+  margin: 8px 0 0;
+  line-height: 1.7;
+}
+
+.chart-panel {
+  margin-top: 14px;
+  padding: 16px;
+}
+
+.bar-chart {
+  display: grid;
+  grid-template-columns: repeat(var(--bars, 7), minmax(18px, 1fr));
+  align-items: end;
+  gap: 7px;
+  min-height: 190px;
+  padding-top: 20px;
+}
+
+.bar {
+  display: grid;
+  grid-template-rows: 1fr auto;
+  gap: 8px;
+  min-width: 0;
+  height: 170px;
+}
+
+.bar-fill {
+  align-self: end;
+  min-height: 3px;
+  border-radius: 5px 5px 0 0;
+  background: var(--ink);
+}
+
+.bar-label {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 11px;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.empty {
+  padding: 22px;
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.bottom-nav {
+  position: fixed;
+  left: 50%;
+  bottom: max(12px, env(safe-area-inset-bottom));
+  z-index: 3;
+  width: min(940px, calc(100% - 20px));
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.94);
+  transform: translateX(-50%);
+  backdrop-filter: blur(10px);
+}
+
+.bottom-nav button {
+  min-height: 42px;
+  padding: 4px 6px;
+  font-size: 13px;
+}
+
+dialog {
+  width: min(360px, calc(100% - 30px));
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
+}
+
+dialog::backdrop {
+  background: rgba(31, 29, 26, 0.28);
+}
+
+.dialog-yokai {
+  display: grid;
+  place-items: center;
+  margin-top: 4px;
+}
+
+dialog h2,
+dialog p {
+  text-align: center;
+}
+
+dialog p {
+  color: var(--muted);
+}
+
+@media (max-width: 760px) {
+  .app-shell {
+    padding: 14px 12px 94px;
+  }
+
+  .topbar {
+    align-items: flex-start;
+  }
+
+  .gate-button {
+    flex: 0 0 128px;
+    min-height: 40px;
+    font-size: 13px;
+  }
+
+  .metric-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .metric-card {
+    min-height: 112px;
+    padding: 14px;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .bottom-nav {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 420px) {
+  .book-card {
+    grid-template-columns: 62px 1fr;
+    gap: 11px;
+  }
+
+  .cover {
+    width: 62px;
+  }
+
+  .metric-card strong {
+    font-size: 25px;
+  }
+}
