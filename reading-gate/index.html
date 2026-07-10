@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>読書ゲート</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">読書ゲート</p>
+          <h1 id="screen-title">ホーム</h1>
+        </div>
+        <button class="gate-button" id="open-gate" type="button">SNSを開きそう</button>
+      </header>
+
+      <section class="yokai-stage" aria-label="妖怪INFJ">
+        <img
+          class="home-yokai-image"
+          id="yokai"
+          src="data:image/jpeg;base64,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"
+          alt="本を読んでいる妖怪INFJ"
+        />
+        <p id="yokai-message">静かに、そばにいる。</p>
+      </section>
+
+      <section class="screen active" id="home-screen" data-title="ホーム">
+        <div class="metric-grid" id="home-metrics"></div>
+        <div class="quick-row">
+          <button class="primary" type="button" data-start-reading>📖 15分読む</button>
+          <button type="button" data-nav="shelf">📚 本棚へ</button>
+        </div>
+      </section>
+
+      <section class="screen" id="shelf-screen" data-title="本棚">
+        <form class="form-panel" id="book-form">
+          <label>
+            表紙画像URL
+            <input id="cover-input" type="url" placeholder="空欄でもOK" />
+          </label>
+          <div class="form-grid">
+            <label>
+              タイトル
+              <input id="title-input" required placeholder="読みたい本" />
+            </label>
+            <label>
+              著者
+              <input id="author-input" placeholder="著者名" />
+            </label>
+          </div>
+          <div class="form-grid">
+            <label>
+              総ページ
+              <input id="total-input" required type="number" min="1" value="300" />
+            </label>
+            <label>
+              現在ページ
+              <input id="current-input" type="number" min="0" value="0" />
+            </label>
+          </div>
+          <button class="primary" type="submit">本を登録</button>
+        </form>
+        <div class="book-list" id="book-list"></div>
+      </section>
+
+      <section class="screen" id="timer-screen" data-title="読書タイマー">
+        <div class="timer-card">
+          <p class="timer-label" id="timer-label">読書中</p>
+          <div class="timer-time" id="timer-time">15:00</div>
+          <select id="timer-book"></select>
+          <div class="timer-actions">
+            <button class="primary" id="timer-start" type="button">開始</button>
+            <button id="timer-finish" type="button">記録へ</button>
+          </div>
+        </div>
+        <form class="form-panel hidden" id="session-form">
+          <div class="form-grid">
+            <label>
+              開始ページ
+              <input id="start-page-input" type="number" min="0" value="0" />
+            </label>
+            <label>
+              終了ページ
+              <input id="end-page-input" type="number" min="0" value="0" />
+            </label>
+          </div>
+          <label>
+            今日残したいこと
+            <textarea id="memo-input" rows="4" placeholder="心に残ったことを少しだけ"></textarea>
+          </label>
+          <button class="primary" type="submit">保存する</button>
+        </form>
+      </section>
+
+      <section class="screen" id="memos-screen" data-title="本ごとの読書メモ">
+        <div class="book-tabs" id="memo-book-tabs"></div>
+        <div class="memo-list" id="memo-list"></div>
+      </section>
+
+      <section class="screen" id="graphs-screen" data-title="グラフ">
+        <div class="range-tabs" id="range-tabs">
+          <button class="active" type="button" data-range="7">7日</button>
+          <button type="button" data-range="30">30日</button>
+          <button type="button" data-range="365">1年</button>
+        </div>
+        <section class="chart-panel">
+          <h2>読書時間推移</h2>
+          <div class="bar-chart" id="minutes-chart"></div>
+        </section>
+        <section class="chart-panel">
+          <h2>読んだページ数</h2>
+          <div class="bar-chart monthly" id="pages-chart"></div>
+        </section>
+      </section>
+
+      <section class="screen" id="settings-screen" data-title="設定">
+        <form class="form-panel" id="settings-form">
+          <fieldset>
+            <legend>ゲート対象アプリ</legend>
+            <label class="check"><input type="checkbox" name="gateApp" value="X" /> X</label>
+            <label class="check"><input type="checkbox" name="gateApp" value="Instagram" /> Instagram</label>
+            <label class="check"><input type="checkbox" name="gateApp" value="YouTube" /> YouTube</label>
+          </fieldset>
+          <div class="form-grid">
+            <label>
+              読書時間
+              <input id="reading-minutes" type="number" min="1" max="120" />
+            </label>
+            <label>
+              SNS時間
+              <input id="sns-minutes" type="number" min="1" max="60" />
+            </label>
+          </div>
+          <label>
+            目次だけ見る
+            <input id="short-minutes" type="number" min="1" max="30" />
+          </label>
+          <button class="primary" type="submit">設定を保存</button>
+        </form>
+      </section>
+
+      <nav class="bottom-nav" aria-label="画面切り替え">
+        <button class="active" type="button" data-nav="home">ホーム</button>
+        <button type="button" data-nav="shelf">本棚</button>
+        <button type="button" data-nav="timer">タイマー</button>
+        <button type="button" data-nav="memos">メモ</button>
+        <button type="button" data-nav="graphs">グラフ</button>
+        <button type="button" data-nav="settings">設定</button>
+      </nav>
+    </main>
+
+    <dialog id="gate-dialog">
+      <div class="dialog-yokai">
+        <div class="yokai small pulling mood-gate" aria-label="袖を引く黒い火の妖怪">
+          <div class="yokai-flame"></div>
+          <div class="yokai-face" aria-hidden="true">
+            <span class="eye left"></span>
+            <span class="eye right"></span>
+            <span class="mouth"></span>
+          </div>
+          <div class="yokai-hands"></div>
+          <div class="yokai-feet"></div>
+          <div class="yokai-dust"></div>
+        </div>
+      </div>
+      <h2>……読む？</h2>
+      <p>この15分で読書できるよ</p>
+      <div class="dialog-actions">
+        <button class="primary" type="button" data-gate-action="read">📖 15分読む</button>
+        <button type="button" data-gate-action="short">📚 目次だけ見る</button>
+        <button type="button" data-gate-action="sns">📱 5分だけ見る</button>
+      </div>
+    </dialog>
+
+    <dialog id="sns-dialog">
+      <h2>SNS時間</h2>
+      <div class="timer-time compact" id="sns-time">05:00</div>
+      <p id="sns-message">終わったら、もう一度だけ聞くね。</p>
+      <div class="dialog-actions hidden" id="sns-actions">
+        <button class="primary" type="button" data-sns-action="read">読書する</button>
+        <button type="button" data-sns-action="extend">SNS延長</button>
+      </div>
+    </dialog>
+
+    <script src="game.js"></script>
+  </body>
+</html>
