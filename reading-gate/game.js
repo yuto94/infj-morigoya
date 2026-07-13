@@ -175,10 +175,6 @@ function totals() {
   return { minutes, pages, finished, memos: state.memos.length };
 }
 
-function ornamentIcon(name, alt = "") {
-  return `<span class="ornament-icon icon-${name}" role="img" aria-label="${alt}"></span>`;
-}
-
 function setYokai(mood) {
   const moods = {
     normal: "静かに、そばにいる。",
@@ -226,16 +222,16 @@ function render() {
 function renderHome() {
   const summary = totals();
   const metrics = [
-    ["open-book", "読書時間", formatMinutes(summary.minutes)],
-    ["page", "読んだページ", `${summary.pages.toLocaleString()}ページ`],
-    ["closed-book", "読了した本", `${summary.finished}冊`],
-    ["pen", "読書メモ", `${summary.memos}個`],
+    ["読書時間", formatMinutes(summary.minutes)],
+    ["読んだページ", `${summary.pages.toLocaleString()}ページ`],
+    ["読了した本", `${summary.finished}冊`],
+    ["読書メモ", `${summary.memos}個`],
   ];
   elements.homeMetrics.replaceChildren(
-    ...metrics.map(([icon, label, value]) => {
+    ...metrics.map(([label, value]) => {
       const card = document.createElement("article");
       card.className = "metric-card";
-      card.innerHTML = `<span class="metric-label">${ornamentIcon(icon)}${label}</span><strong>${value}</strong>`;
+      card.innerHTML = `<span class="metric-label">${label}</span><strong>${value}</strong>`;
       return card;
     }),
   );
@@ -256,7 +252,7 @@ function renderBooks() {
       const card = document.createElement("article");
       card.className = "book-card";
       card.innerHTML = `
-        <div class="cover">${book.coverImage ? `<img alt="" src="${book.coverImage}">` : ornamentIcon("closed-book", "本")}</div>
+        <div class="cover">${book.coverImage ? `<img alt="" src="${book.coverImage}">` : "本"}</div>
         <div>
           <h3>${escapeHtml(book.title)}</h3>
           <p class="book-meta">${escapeHtml(book.author || "著者未設定")} ・ ${book.status === "finished" ? "読了済み" : "読書中"}</p>
