@@ -182,6 +182,11 @@ function setYokai(mood) {
     gate: "……読む？",
     done: "積み上がった。えらい。",
   };
+  const imageSrc = mood === "reading" ? elements.yokai.dataset.readingSrc : elements.yokai.dataset.mainSrc;
+  if (imageSrc && elements.yokai.getAttribute("src") !== imageSrc) {
+    elements.yokai.setAttribute("src", imageSrc);
+  }
+  elements.yokai.alt = mood === "reading" ? "本を読んでいる妖怪INFJ" : "森にいる妖怪INFJ";
   elements.yokaiMessage.textContent = moods[mood] || moods.normal;
   elements.yokai.classList.remove("mood-normal", "mood-reading", "mood-gate", "mood-done");
   elements.yokai.classList.add(`mood-${mood}`);
