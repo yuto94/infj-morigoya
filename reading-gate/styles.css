@@ -61,7 +61,7 @@ button.primary,
   width: min(100%, 980px);
   min-height: 100svh;
   margin: 0 auto;
-  padding: 18px 18px 96px;
+  padding: 18px 18px 132px;
 }
 
 .topbar {
@@ -104,7 +104,7 @@ h2 {
 }
 
 .home-yokai-image {
-  width: min(100%, 420px);
+  width: min(100%, 340px);
   height: auto;
   display: block;
   border: 1px solid #cfc6b6;
@@ -379,6 +379,7 @@ h2 {
 
 .screen.active {
   display: block;
+  padding-bottom: 24px;
 }
 
 .metric-grid {
@@ -721,7 +722,7 @@ dialog p {
 
 @media (max-width: 760px) {
   .app-shell {
-    padding: 14px 12px 94px;
+    padding: 14px 12px 150px;
   }
 
   .topbar {
