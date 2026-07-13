@@ -1,8 +1,8 @@
 :root {
   color-scheme: light;
-  --bg: #fbfaf6;
-  --panel: #ffffff;
-  --panel-2: #f4f1e9;
+  --bg: #f3eadb;
+  --panel: #f7efe2;
+  --panel-2: #eee2cf;
   --ink: #1f1d1a;
   --muted: #6f6a61;
   --line: #ded7c9;
@@ -36,7 +36,7 @@ button {
   min-height: 42px;
   border: 1px solid var(--line);
   border-radius: 7px;
-  background: #fff;
+  background: var(--panel);
   color: var(--ink);
   cursor: pointer;
 }
@@ -55,6 +55,30 @@ button.primary,
   border-color: #1f1d1a;
   background: #1f1d1a;
   color: #fff;
+}
+
+.button-icon,
+.ornament-icon {
+  width: 24px;
+  height: 24px;
+  flex: 0 0 auto;
+  display: inline-block;
+  background-image: url("ornament-sprite.svg");
+  background-repeat: no-repeat;
+  background-size: 600% 100%;
+  mix-blend-mode: multiply;
+}
+
+.icon-open-book { background-position: 0% 0; }
+.icon-pen { background-position: 20% 0; }
+.icon-closed-book { background-position: 40% 0; }
+.icon-page { background-position: 60% 0; }
+.icon-tree { background-position: 80% 0; }
+.icon-house { background-position: 100% 0; }
+
+button .button-icon {
+  margin-right: 7px;
+  vertical-align: middle;
 }
 
 .app-shell {
@@ -405,9 +429,16 @@ h2 {
 }
 
 .metric-card span {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 7px;
   color: var(--muted);
   font-size: 14px;
+}
+
+.metric-card .ornament-icon {
+  width: 30px;
+  height: 30px;
 }
 
 .metric-card strong {
@@ -479,7 +510,7 @@ select {
   margin-top: 6px;
   border: 1px solid var(--line);
   border-radius: 7px;
-  background: #fff;
+  background: #fbf4e8;
   color: var(--ink);
   padding: 9px 10px;
 }
@@ -542,6 +573,11 @@ fieldset {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+.cover .ornament-icon {
+  width: 54px;
+  height: 54px;
 }
 
 .book-card h3 {
@@ -698,7 +734,7 @@ fieldset {
   padding: 8px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.94);
+  background: rgba(247, 239, 226, 0.94);
   transform: translateX(-50%);
   backdrop-filter: blur(10px);
 }
@@ -713,9 +749,10 @@ dialog {
   width: min(360px, calc(100% - 30px));
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: #fff;
+  background: var(--panel);
   color: var(--ink);
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
+  padding: 18px;
 }
 
 dialog::backdrop {
@@ -725,12 +762,24 @@ dialog::backdrop {
 .dialog-yokai {
   display: grid;
   place-items: center;
-  margin-top: 4px;
+  margin: 0 0 16px;
+}
+
+.gate-yokai-image {
+  display: block;
+  width: min(72vw, 230px);
+  max-height: 260px;
+  object-fit: contain;
+  mix-blend-mode: multiply;
 }
 
 dialog h2,
 dialog p {
   text-align: center;
+}
+
+dialog h2 {
+  margin-top: 0;
 }
 
 dialog p {
