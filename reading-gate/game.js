@@ -50,6 +50,8 @@ let activeScreen = "home";
 let selectedMemoBookId = state.books[0]?.id || "";
 let activeRange = 7;
 let pendingMood = null;
+let editingBookId = "";
+let editingSessionId = "";
 let timer = {
   mode: "reading",
   totalSeconds: state.settings.readingMinutes * 60,
@@ -77,7 +79,13 @@ const elements = {
   authorInput: document.getElementById("author-input"),
   totalInput: document.getElementById("total-input"),
   currentInput: document.getElementById("current-input"),
+  bookSubmit: document.getElementById("book-submit"),
+  bookCancel: document.getElementById("book-cancel"),
   bookList: document.getElementById("book-list"),
+  sessionEditForm: document.getElementById("session-edit-form"),
+  sessionMinutesInput: document.getElementById("session-minutes-input"),
+  sessionPagesInput: document.getElementById("session-pages-input"),
+  sessionCancel: document.getElementById("session-cancel"),
   timerLabel: document.getElementById("timer-label"),
   timerTime: document.getElementById("timer-time"),
   timerBook: document.getElementById("timer-book"),
@@ -238,6 +246,7 @@ function renderHome() {
 }
 
 function renderBooks() {
+  renderBookFormMode();
   if (!state.books.length) {
     elements.bookList.innerHTML = `<div class="empty">最初の本を登録しよう。</div>`;
     return;
@@ -249,6 +258,21 @@ function renderBooks() {
       const minutes = bookSessions.reduce((sum, session) => sum + Number(session.minutes || 0), 0);
       const memoCount = state.memos.filter((memo) => memo.bookId === book.id).length;
       const percent = Math.min(100, Math.round((book.currentPage / book.totalPages) * 100) || 0);
+      const sessionRows = bookSessions
+        .slice()
+        .sort((a, b) => new Date(b.date) - new Date(a.date))
+        .map(
+          (session) => `
+            <div class="session-row">
+              <span>${shortDate(session.date)} ・ ${formatMinutes(Number(session.minutes || 0))} ・ ${Number(session.pages || 0)}ページ</span>
+              <div class="mini-actions">
+                <button type="button" data-edit-session="${session.id}">編集</button>
+                <button type="button" data-delete-session="${session.id}">削除</button>
+              </div>
+            </div>
+          `,
+        )
+        .join("");
       const card = document.createElement("article");
       card.className = "book-card";
       card.innerHTML = `
@@ -262,11 +286,142 @@ function renderBooks() {
             <span>読書時間: ${formatMinutes(minutes)}</span>
             <span>メモ: ${memoCount}個</span>
           </div>
+          <div class="card-actions">
+            <button type="button" data-edit-book="${book.id}">本を編集</button>
+            <button type="button" data-delete-book="${book.id}">本を削除</button>
+          </div>
+          <div class="session-list">
+            <h4>読書記録</h4>
+            ${sessionRows || `<p class="book-meta">まだ記録がありません。</p>`}
+          </div>
         </div>
       `;
       return card;
     }),
   );
+  elements.bookList.querySelectorAll("[data-edit-book]").forEach((button) => {
+    button.addEventListener("click", () => startBookEdit(button.dataset.editBook));
+  });
+  elements.bookList.querySelectorAll("[data-delete-book]").forEach((button) => {
+    button.addEventListener("click", () => deleteBook(button.dataset.deleteBook));
+  });
+  elements.bookList.querySelectorAll("[data-edit-session]").forEach((button) => {
+    button.addEventListener("click", () => startSessionEdit(button.dataset.editSession));
+  });
+  elements.bookList.querySelectorAll("[data-delete-session]").forEach((button) => {
+    button.addEventListener("click", () => deleteSession(button.dataset.deleteSession));
+  });
+}
+
+function renderBookFormMode() {
+  if (!elements.bookSubmit || !elements.bookCancel) return;
+  elements.bookSubmit.textContent = editingBookId ? "本を保存" : "本を登録";
+  elements.bookCancel.classList.toggle("hidden", !editingBookId);
+}
+
+function resetBookForm() {
+  editingBookId = "";
+  elements.bookForm.reset();
+  elements.totalInput.value = 300;
+  elements.currentInput.value = 0;
+  renderBookFormMode();
+}
+
+function startBookEdit(bookId) {
+  const book = state.books.find((item) => item.id === bookId);
+  if (!book) return;
+  editingBookId = book.id;
+  elements.coverInput.value = book.coverImage || "";
+  elements.titleInput.value = book.title || "";
+  elements.authorInput.value = book.author || "";
+  elements.totalInput.value = book.totalPages || 1;
+  elements.currentInput.value = book.currentPage || 0;
+  renderBookFormMode();
+  elements.bookForm.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function deleteBook(bookId) {
+  const book = state.books.find((item) => item.id === bookId);
+  if (!book) return;
+  if (!window.confirm(`「${book.title || "未設定の本"}」を削除しますか？\nこの本の読書記録とメモも削除されます。`)) return;
+  state.books = state.books.filter((item) => item.id !== bookId);
+  state.sessions = state.sessions.filter((session) => session.bookId !== bookId);
+  state.memos = state.memos.filter((memo) => memo.bookId !== bookId);
+  if (editingBookId === bookId) resetBookForm();
+  if (selectedMemoBookId === bookId) selectedMemoBookId = state.books[0]?.id || "";
+  if (elements.timerBook.value === bookId) resetTimerLength();
+  saveState();
+  render();
+}
+
+function startSessionEdit(sessionId) {
+  const session = state.sessions.find((item) => item.id === sessionId);
+  if (!session) return;
+  editingSessionId = session.id;
+  elements.sessionMinutesInput.value = Math.max(1, Number(session.minutes || 1));
+  elements.sessionPagesInput.value = Math.max(0, Number(session.pages || 0));
+  elements.sessionEditForm.classList.remove("hidden");
+  elements.sessionEditForm.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function resetSessionEdit() {
+  editingSessionId = "";
+  elements.sessionEditForm.classList.add("hidden");
+  elements.sessionEditForm.reset();
+}
+
+function saveSessionEdit(event) {
+  event.preventDefault();
+  const session = state.sessions.find((item) => item.id === editingSessionId);
+  if (!session) return;
+  const minutes = Math.max(1, Number(elements.sessionMinutesInput.value || 1));
+  const pages = Math.max(0, Number(elements.sessionPagesInput.value || 0));
+  session.minutes = minutes;
+  session.pages = pages;
+  session.endPage = Number(session.startPage || 0) + pages;
+  session.updatedAt = new Date().toISOString();
+  const book = state.books.find((item) => item.id === session.bookId);
+  if (book) {
+    book.currentPage = Math.min(book.totalPages, Math.max(Number(book.currentPage || 0), Number(session.endPage || 0)));
+    book.status = book.currentPage >= book.totalPages ? "finished" : "reading";
+    book.updatedAt = session.updatedAt;
+  }
+  resetSessionEdit();
+  saveState();
+  render();
+}
+
+function deleteSession(sessionId) {
+  const session = state.sessions.find((item) => item.id === sessionId);
+  if (!session) return;
+  if (!window.confirm("この読書記録を削除しますか？")) return;
+  state.sessions = state.sessions.filter((item) => item.id !== sessionId);
+  if (editingSessionId === sessionId) resetSessionEdit();
+  saveState();
+  render();
+}
+
+function editMemo(memoId) {
+  const memo = state.memos.find((item) => item.id === memoId);
+  if (!memo) return;
+  const pageValue = window.prompt("ページを編集", memo.page || 0);
+  if (pageValue === null) return;
+  const textValue = window.prompt("メモを編集", memo.text || "");
+  if (textValue === null) return;
+  memo.page = Math.max(0, Number(pageValue || 0));
+  memo.text = textValue.trim();
+  memo.updatedAt = new Date().toISOString();
+  saveState();
+  render();
+}
+
+function deleteMemo(memoId) {
+  const memo = state.memos.find((item) => item.id === memoId);
+  if (!memo) return;
+  if (!window.confirm("このメモを削除しますか？")) return;
+  state.memos = state.memos.filter((item) => item.id !== memoId);
+  saveState();
+  render();
 }
 
 function renderTimerBooks() {
@@ -329,10 +484,20 @@ function renderMemos() {
       card.innerHTML = `
         <time>${shortDate(memo.date)} ・ p.${memo.page || 0}</time>
         <p>${escapeHtml(memo.text)}</p>
+        <div class="card-actions">
+          <button type="button" data-edit-memo="${memo.id}">メモを編集</button>
+          <button type="button" data-delete-memo="${memo.id}">メモを削除</button>
+        </div>
       `;
       return card;
     }),
   );
+  elements.memoList.querySelectorAll("[data-edit-memo]").forEach((button) => {
+    button.addEventListener("click", () => editMemo(button.dataset.editMemo));
+  });
+  elements.memoList.querySelectorAll("[data-delete-memo]").forEach((button) => {
+    button.addEventListener("click", () => deleteMemo(button.dataset.deleteMemo));
+  });
 }
 
 function renderGraphs() {
@@ -507,6 +672,22 @@ function addBook(event) {
   const totalPages = Math.max(1, Number(elements.totalInput.value || 1));
   const currentPage = Math.min(totalPages, Math.max(0, Number(elements.currentInput.value || 0)));
   const now = new Date().toISOString();
+  const existingBook = state.books.find((item) => item.id === editingBookId);
+  if (existingBook) {
+    existingBook.title = elements.titleInput.value.trim();
+    existingBook.author = elements.authorInput.value.trim();
+    existingBook.coverImage = elements.coverInput.value.trim();
+    existingBook.totalPages = totalPages;
+    existingBook.currentPage = currentPage;
+    existingBook.status = currentPage >= totalPages ? "finished" : "reading";
+    existingBook.updatedAt = now;
+    selectedMemoBookId = existingBook.id;
+    saveState();
+    resetBookForm();
+    render();
+    return;
+  }
+
   const book = {
     id: uid("book"),
     title: elements.titleInput.value.trim(),
@@ -521,9 +702,7 @@ function addBook(event) {
   state.books.unshift(book);
   selectedMemoBookId = book.id;
   saveState();
-  elements.bookForm.reset();
-  elements.totalInput.value = 300;
-  elements.currentInput.value = 0;
+  resetBookForm();
   render();
 }
 
@@ -788,6 +967,9 @@ document.querySelectorAll("#range-tabs button").forEach((button) => {
 });
 
 elements.bookForm.addEventListener("submit", addBook);
+elements.bookCancel.addEventListener("click", resetBookForm);
+elements.sessionEditForm.addEventListener("submit", saveSessionEdit);
+elements.sessionCancel.addEventListener("click", resetSessionEdit);
 elements.timerStart.addEventListener("click", toggleTimer);
 elements.timerFinish.addEventListener("click", finishTimer);
 elements.sessionForm.addEventListener("submit", saveSession);
