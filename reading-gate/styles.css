@@ -61,7 +61,7 @@ button.primary,
   width: min(100%, 980px);
   min-height: 100svh;
   margin: 0 auto;
-  padding: 18px 18px 132px;
+  padding: 0 18px 132px;
 }
 
 .topbar {
@@ -97,18 +97,18 @@ h2 {
   display: grid;
   justify-items: center;
   gap: 10px;
-  margin: 18px 0 20px;
+  margin: 0 -18px 20px;
   padding: 0;
   border: 0;
   background: transparent;
 }
 
 .home-yokai-image {
-  width: min(100%, 340px);
+  width: 100%;
   height: auto;
   display: block;
-  border: 1px solid #cfc6b6;
-  border-radius: 4px;
+  border: 0;
+  border-radius: 0;
 }
 
 .yokai {
@@ -442,6 +442,23 @@ h2 {
   padding: 16px;
 }
 
+.export-panel {
+  margin-top: 14px;
+}
+
+.export-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.export-status {
+  min-height: 22px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
 .form-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -722,7 +739,11 @@ dialog p {
 
 @media (max-width: 760px) {
   .app-shell {
-    padding: 14px 12px 150px;
+    padding: 0 12px 150px;
+  }
+
+  .yokai-stage {
+    margin: 0 -12px 18px;
   }
 
   .topbar {
@@ -745,6 +766,10 @@ dialog p {
   }
 
   .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .export-actions {
     grid-template-columns: 1fr;
   }
 
