@@ -57,30 +57,6 @@ button.primary,
   color: #fff;
 }
 
-.button-icon,
-.ornament-icon {
-  width: 24px;
-  height: 24px;
-  flex: 0 0 auto;
-  display: inline-block;
-  background-image: url("ornament-sprite.svg");
-  background-repeat: no-repeat;
-  background-size: 600% 100%;
-  mix-blend-mode: multiply;
-}
-
-.icon-open-book { background-position: 0% 0; }
-.icon-pen { background-position: 20% 0; }
-.icon-closed-book { background-position: 40% 0; }
-.icon-page { background-position: 60% 0; }
-.icon-tree { background-position: 80% 0; }
-.icon-house { background-position: 100% 0; }
-
-button .button-icon {
-  margin-right: 7px;
-  vertical-align: middle;
-}
-
 .app-shell {
   width: min(100%, 980px);
   min-height: 100svh;
@@ -436,11 +412,6 @@ h2 {
   font-size: 14px;
 }
 
-.metric-card .ornament-icon {
-  width: 30px;
-  height: 30px;
-}
-
 .metric-card strong {
   display: block;
   margin-top: 12px;
@@ -573,11 +544,6 @@ fieldset {
   width: 100%;
   height: 100%;
   object-fit: cover;
-}
-
-.cover .ornament-icon {
-  width: 54px;
-  height: 54px;
 }
 
 .book-card h3 {
