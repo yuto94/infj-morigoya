@@ -23,8 +23,8 @@
       <section class="screen active" id="home-screen" data-title="ホーム">
         <div class="metric-grid" id="home-metrics"></div>
         <div class="quick-row">
-          <button class="primary" type="button" data-start-reading>📖 15分読む</button>
-          <button type="button" data-nav="shelf">📚 本棚へ</button>
+          <button class="primary" type="button" data-start-reading><span class="button-icon ornament-icon icon-open-book" aria-hidden="true"></span>15分読む</button>
+          <button type="button" data-nav="shelf"><span class="button-icon ornament-icon icon-house" aria-hidden="true"></span>本棚へ</button>
           <button class="gate-button" id="open-gate" type="button">SNSを開きそう</button>
         </div>
       </section>
@@ -159,24 +159,14 @@
 
     <dialog id="gate-dialog">
       <div class="dialog-yokai">
-        <div class="yokai small pulling mood-gate" aria-label="袖を引く黒い火の妖怪">
-          <div class="yokai-flame"></div>
-          <div class="yokai-face" aria-hidden="true">
-            <span class="eye left"></span>
-            <span class="eye right"></span>
-            <span class="mouth"></span>
-          </div>
-          <div class="yokai-hands"></div>
-          <div class="yokai-feet"></div>
-          <div class="yokai-dust"></div>
-        </div>
+        <img class="gate-yokai-image" src="gate-yokai.svg" alt="こちらを見ている妖怪INFJ" />
       </div>
       <h2>……読む？</h2>
       <p>この15分で読書できるよ</p>
       <div class="dialog-actions">
-        <button class="primary" type="button" data-gate-action="read">📖 15分読む</button>
-        <button type="button" data-gate-action="short">📚 目次だけ見る</button>
-        <button type="button" data-gate-action="sns">📱 5分だけ見る</button>
+        <button class="primary" type="button" data-gate-action="read"><span class="button-icon ornament-icon icon-open-book" aria-hidden="true"></span>15分読む</button>
+        <button type="button" data-gate-action="short"><span class="button-icon ornament-icon icon-closed-book" aria-hidden="true"></span>目次だけ見る</button>
+        <button type="button" data-gate-action="sns"><span class="button-icon ornament-icon icon-tree" aria-hidden="true"></span>5分だけ見る</button>
       </div>
     </dialog>
 
