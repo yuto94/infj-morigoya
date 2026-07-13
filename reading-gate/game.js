@@ -62,6 +62,7 @@ let snsTimer = {
   remainingSeconds: state.settings.snsMinutes * 60,
   interval: null,
 };
+let exportObjectUrl = "";
 
 const elements = {
   screenTitle: document.getElementById("screen-title"),
@@ -94,6 +95,12 @@ const elements = {
   readingMinutes: document.getElementById("reading-minutes"),
   shortMinutes: document.getElementById("short-minutes"),
   snsMinutes: document.getElementById("sns-minutes"),
+  exportBackup: document.getElementById("export-backup"),
+  importBackup: document.getElementById("import-backup"),
+  importBackupFile: document.getElementById("import-backup-file"),
+  exportNotion: document.getElementById("export-notion"),
+  exportEvernote: document.getElementById("export-evernote"),
+  exportStatus: document.getElementById("export-status"),
   gateDialog: document.getElementById("gate-dialog"),
   snsDialog: document.getElementById("sns-dialog"),
   snsTime: document.getElementById("sns-time"),
@@ -118,6 +125,15 @@ function loadState() {
 
 function saveState() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+function normalizeState(value) {
+  return {
+    books: Array.isArray(value?.books) ? value.books : [],
+    sessions: Array.isArray(value?.sessions) ? value.sessions : [],
+    memos: Array.isArray(value?.memos) ? value.memos : [],
+    settings: { ...defaultState.settings, ...(value?.settings || {}) },
+  };
 }
 
 function uid(prefix) {
@@ -146,6 +162,10 @@ function dateKey(dateValue) {
 function shortDate(dateValue) {
   const date = new Date(dateValue);
   return `${date.getMonth() + 1}/${date.getDate()}`;
+}
+
+function fileDate(dateValue = new Date()) {
+  return dateKey(dateValue);
 }
 
 function totals() {
@@ -177,7 +197,9 @@ function navigate(screen) {
     button.classList.toggle("active", button.dataset.nav === screen);
   });
   const screenNode = document.getElementById(`${screen}-screen`);
-  elements.screenTitle.textContent = screenNode?.dataset.title || "読書ゲート";
+  if (elements.screenTitle) {
+    elements.screenTitle.textContent = screenNode?.dataset.title || "読書ゲート";
+  }
   setYokai(pendingMood || (screen === "timer" ? "reading" : "normal"));
   pendingMood = null;
   render();
@@ -514,6 +536,173 @@ function saveSettings(event) {
   render();
 }
 
+async function downloadText(filename, content, type, description, extensions) {
+  const blob = new Blob([content], { type });
+  if (window.showSaveFilePicker) {
+    const handle = await window.showSaveFilePicker({
+      suggestedName: filename,
+      types: [
+        {
+          description,
+          accept: { [type.split(";")[0]]: extensions },
+        },
+      ],
+    });
+    const writable = await handle.createWritable();
+    await writable.write(blob);
+    await writable.close();
+    return "saved";
+  }
+
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = filename;
+  anchor.rel = "noopener";
+  anchor.style.display = "none";
+  document.body.append(anchor);
+  anchor.click();
+  window.setTimeout(() => {
+    anchor.remove();
+  }, 1000);
+  return { mode: "download", url, filename };
+}
+
+function setExportStatus(message, downloadLink) {
+  if (exportObjectUrl && exportObjectUrl !== downloadLink?.url) {
+    URL.revokeObjectURL(exportObjectUrl);
+    exportObjectUrl = "";
+  }
+  elements.exportStatus.textContent = message;
+  if (!downloadLink) return;
+  exportObjectUrl = downloadLink.url;
+  elements.exportStatus.append(" ");
+  const link = document.createElement("a");
+  link.href = downloadLink.url;
+  link.download = downloadLink.filename;
+  link.textContent = "保存リンクを開く";
+  elements.exportStatus.append(link);
+}
+
+async function exportBackup() {
+  const payload = {
+    app: "reading-gate",
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    data: state,
+  };
+  try {
+    const result = await downloadText(
+      `reading-gate-backup-${fileDate()}.json`,
+      JSON.stringify(payload, null, 2),
+      "application/json;charset=utf-8",
+      "JSONバックアップ",
+      [".json"],
+    );
+    setExportStatus(
+      result === "saved" ? "バックアップを保存しました。" : "自動で始まらない場合は、",
+      result === "saved" ? null : result,
+    );
+  } catch {
+    setExportStatus("バックアップの保存をキャンセルしました。");
+  }
+}
+
+function csvCell(value) {
+  return `"${String(value ?? "").replaceAll('"', '""')}"`;
+}
+
+async function exportNotionCsv() {
+  const header = ["Book", "Author", "Date", "Page", "Memo"];
+  const rows = state.memos.map((memo) => {
+    const book = state.books.find((item) => item.id === memo.bookId);
+    return [
+      book?.title || "未設定の本",
+      book?.author || "",
+      dateKey(memo.date),
+      memo.page || "",
+      memo.text || "",
+    ];
+  });
+  const csv = [header, ...rows].map((row) => row.map(csvCell).join(",")).join("\n");
+  try {
+    const result = await downloadText(
+      `reading-gate-notion-memos-${fileDate()}.csv`,
+      `\ufeff${csv}`,
+      "text/csv;charset=utf-8",
+      "Notion用CSV",
+      [".csv"],
+    );
+    setExportStatus(
+      result === "saved" ? "Notion用CSVを保存しました。" : "自動で始まらない場合は、",
+      result === "saved" ? null : result,
+    );
+  } catch {
+    setExportStatus("Notion用CSVの保存をキャンセルしました。");
+  }
+}
+
+async function exportEvernoteMarkdown() {
+  const lines = ["# 読書ゲート 読書メモ", ""];
+  state.books.forEach((book) => {
+    const memos = state.memos
+      .filter((memo) => memo.bookId === book.id)
+      .sort((a, b) => new Date(a.date) - new Date(b.date));
+    if (!memos.length) return;
+    lines.push(`## ${book.title || "未設定の本"}`, "");
+    if (book.author) lines.push(`著者: ${book.author}`, "");
+    memos.forEach((memo) => {
+      lines.push(`### ${dateKey(memo.date)} / p.${memo.page || "-"}`, "");
+      lines.push(memo.text || "", "");
+    });
+  });
+  try {
+    const result = await downloadText(
+      `reading-gate-evernote-memos-${fileDate()}.md`,
+      lines.join("\n"),
+      "text/markdown;charset=utf-8",
+      "Evernote用Markdown",
+      [".md"],
+    );
+    setExportStatus(
+      result === "saved" ? "Evernote用Markdownを保存しました。" : "自動で始まらない場合は、",
+      result === "saved" ? null : result,
+    );
+  } catch {
+    setExportStatus("Evernote用Markdownの保存をキャンセルしました。");
+  }
+}
+
+function openImportBackup() {
+  elements.importBackupFile.value = "";
+  elements.importBackupFile.click();
+}
+
+function importBackup(event) {
+  const file = event.target.files?.[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.addEventListener("load", () => {
+    try {
+      const parsed = JSON.parse(String(reader.result || "{}"));
+      if (!window.confirm("現在の読書データをバックアップの内容に置き換えます。読み込みますか？")) {
+        setExportStatus("バックアップの読み込みをキャンセルしました。");
+        return;
+      }
+      state = normalizeState(parsed.data || parsed);
+      selectedMemoBookId = state.books[0]?.id || "";
+      saveState();
+      resetTimerLength();
+      setYokai("done");
+      render();
+      setExportStatus("バックアップを読み込みました。");
+    } catch {
+      setExportStatus("バックアップを読み込めませんでした。");
+    }
+  });
+  reader.readAsText(file);
+}
+
 function resetTimerLength() {
   if (timer.running) return;
   timer.totalSeconds = state.settings.readingMinutes * 60;
@@ -574,7 +763,7 @@ document.querySelectorAll("[data-start-reading]").forEach((button) => {
   button.addEventListener("click", () => startReadingTimer(state.settings.readingMinutes));
 });
 
-document.getElementById("open-gate").addEventListener("click", openGate);
+document.getElementById("open-gate")?.addEventListener("click", openGate);
 
 document.querySelectorAll("[data-gate-action]").forEach((button) => {
   button.addEventListener("click", () => handleGateAction(button.dataset.gateAction));
@@ -597,6 +786,11 @@ elements.timerStart.addEventListener("click", toggleTimer);
 elements.timerFinish.addEventListener("click", finishTimer);
 elements.sessionForm.addEventListener("submit", saveSession);
 elements.settingsForm.addEventListener("submit", saveSettings);
+elements.exportBackup.addEventListener("click", exportBackup);
+elements.importBackup.addEventListener("click", openImportBackup);
+elements.importBackupFile.addEventListener("change", importBackup);
+elements.exportNotion.addEventListener("click", exportNotionCsv);
+elements.exportEvernote.addEventListener("click", exportEvernoteMarkdown);
 
 updateTimerDisplay();
 render();
