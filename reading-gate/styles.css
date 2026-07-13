@@ -422,7 +422,10 @@ h2 {
 .quick-row,
 .timer-actions,
 .dialog-actions,
-.range-tabs {
+.range-tabs,
+.form-actions,
+.card-actions,
+.mini-actions {
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
@@ -434,7 +437,8 @@ h2 {
 
 .quick-row button,
 .timer-actions button,
-.dialog-actions button {
+.dialog-actions button,
+.form-actions button {
   flex: 1 1 150px;
 }
 
@@ -577,6 +581,56 @@ fieldset {
   flex-wrap: wrap;
   color: var(--muted);
   font-size: 13px;
+}
+
+.card-actions {
+  margin-top: 12px;
+}
+
+.card-actions button,
+.mini-actions button {
+  min-height: 34px;
+  padding: 0 12px;
+  font-size: 13px;
+}
+
+.session-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.session-list h4 {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.session-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 0;
+  border-top: 1px dashed var(--line);
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.session-row:first-of-type {
+  border-top: 0;
+}
+
+.session-row span {
+  min-width: 0;
+}
+
+.mini-actions {
+  flex: 0 0 auto;
+  gap: 6px;
 }
 
 .timer-card {
@@ -790,6 +844,15 @@ dialog p {
 
   .bottom-nav {
     grid-template-columns: repeat(3, 1fr);
+  }
+
+  .session-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .mini-actions button {
+    flex: 1 1 90px;
   }
 }
 
