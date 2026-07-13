@@ -55,7 +55,27 @@
               <input id="current-input" type="number" min="0" value="0" />
             </label>
           </div>
-          <button class="primary" type="submit">本を登録</button>
+          <div class="form-actions">
+            <button class="primary" id="book-submit" type="submit">本を登録</button>
+            <button class="hidden" id="book-cancel" type="button">編集をやめる</button>
+          </div>
+        </form>
+        <form class="form-panel hidden" id="session-edit-form">
+          <h2>読書記録を編集</h2>
+          <div class="form-grid">
+            <label>
+              読書時間
+              <input id="session-minutes-input" type="number" min="1" value="15" />
+            </label>
+            <label>
+              読んだページ
+              <input id="session-pages-input" type="number" min="0" value="0" />
+            </label>
+          </div>
+          <div class="form-actions">
+            <button class="primary" type="submit">記録を保存</button>
+            <button id="session-cancel" type="button">編集をやめる</button>
+          </div>
         </form>
         <div class="book-list" id="book-list"></div>
       </section>
