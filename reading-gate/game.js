@@ -65,6 +65,7 @@ let snsTimer = {
   interval: null,
 };
 let exportObjectUrl = "";
+let audioContext = null;
 
 const elements = {
   screenTitle: document.getElementById("screen-title"),
@@ -567,6 +568,7 @@ function renderSettings() {
 }
 
 function startReadingTimer(minutes = state.settings.readingMinutes) {
+  prepareAudio();
   clearInterval(timer.interval);
   timer = {
     mode: "reading",
@@ -586,6 +588,7 @@ function startReadingTimer(minutes = state.settings.readingMinutes) {
 
 function toggleTimer() {
   if (!state.books.length) return;
+  prepareAudio();
   if (timer.running) {
     clearInterval(timer.interval);
     timer.running = false;
@@ -598,16 +601,17 @@ function toggleTimer() {
   timer.interval = setInterval(() => {
     timer.remainingSeconds -= 1;
     updateTimerDisplay();
-    if (timer.remainingSeconds <= 0) finishTimer();
+    if (timer.remainingSeconds <= 0) finishTimer(true);
   }, 1000);
 }
 
-function finishTimer() {
+function finishTimer(playSound = false) {
   clearInterval(timer.interval);
   timer.running = false;
   timer.remainingSeconds = Math.max(0, timer.remainingSeconds);
   elements.timerStart.textContent = "再開";
   elements.sessionForm.classList.remove("hidden");
+  if (playSound) playWaterDropAlarm();
   const book = state.books.find((item) => item.id === elements.timerBook.value) || state.books[0];
   if (book) {
     elements.startPageInput.value = book.currentPage;
@@ -618,6 +622,61 @@ function finishTimer() {
 
 function updateTimerDisplay() {
   elements.timerTime.textContent = formatTimer(timer.remainingSeconds);
+}
+
+function prepareAudio() {
+  const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+  if (!AudioContextClass) return null;
+  audioContext = audioContext || new AudioContextClass();
+  if (audioContext.state === "suspended") audioContext.resume();
+  return audioContext;
+}
+
+function playWaterDropAlarm() {
+  const context = prepareAudio();
+  if (!context) return;
+  const now = context.currentTime + 0.03;
+  playWaterDrop(now, 0.42);
+  playWaterDrop(now + 0.58, 0.32);
+}
+
+function playWaterDrop(startTime, volume) {
+  const context = audioContext;
+  if (!context) return;
+
+  const oscillator = context.createOscillator();
+  const gain = context.createGain();
+  const filter = context.createBiquadFilter();
+  const ripple = context.createDelay(0.16);
+  const rippleGain = context.createGain();
+
+  oscillator.type = "sine";
+  oscillator.frequency.setValueAtTime(1120, startTime);
+  oscillator.frequency.exponentialRampToValueAtTime(470, startTime + 0.16);
+  oscillator.frequency.exponentialRampToValueAtTime(260, startTime + 0.42);
+
+  filter.type = "lowpass";
+  filter.frequency.setValueAtTime(1900, startTime);
+  filter.frequency.exponentialRampToValueAtTime(620, startTime + 0.45);
+  filter.Q.setValueAtTime(7, startTime);
+
+  gain.gain.setValueAtTime(0.0001, startTime);
+  gain.gain.exponentialRampToValueAtTime(volume, startTime + 0.012);
+  gain.gain.exponentialRampToValueAtTime(0.0001, startTime + 0.5);
+
+  ripple.delayTime.setValueAtTime(0.085, startTime);
+  rippleGain.gain.setValueAtTime(0.16, startTime);
+  rippleGain.gain.exponentialRampToValueAtTime(0.0001, startTime + 0.55);
+
+  oscillator.connect(filter);
+  filter.connect(gain);
+  gain.connect(context.destination);
+  gain.connect(ripple);
+  ripple.connect(rippleGain);
+  rippleGain.connect(context.destination);
+
+  oscillator.start(startTime);
+  oscillator.stop(startTime + 0.56);
 }
 
 function saveSession(event) {
