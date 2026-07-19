@@ -35,6 +35,12 @@
         line-height: 1.8;
       }
 
+      nav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
       a {
         display: inline-flex;
         min-height: 44px;
@@ -51,8 +57,11 @@
   <body>
     <main>
       <h1>INFJ もりごや</h1>
-      <p>静かな小屋に、読書ゲートを置きました。</p>
-      <a href="./reading-gate/">読書ゲートを開く</a>
+      <p>静かな小屋に、INFJのための小さな道具を置いています。</p>
+      <nav aria-label="ツール一覧">
+        <a href="./reading-gate/">読書ゲート</a>
+        <a href="./yohaku/">YOHAKU</a>
+      </nav>
     </main>
   </body>
 </html>
