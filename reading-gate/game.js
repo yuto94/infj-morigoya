@@ -6,10 +6,7 @@ const defaultState = {
       id: "book-sample",
       title: "静かな森の読書術",
       author: "妖怪INFJ",
-      coverImage: "",
-      totalPages: 300,
-      currentPage: 156,
-      status: "reading",
+      learningGoal: "少しだけでも本を開くきっかけを知りたい",
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     },
@@ -31,8 +28,8 @@ const defaultState = {
       id: "memo-sample",
       bookId: "book-sample",
       date: new Date().toISOString(),
-      page: 145,
-      text: "少しだけでも開くと、続きは自然に読める。",
+      page: null,
+      text: "少しだけでも開くと、続きは自然に読めると知った。",
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     },
@@ -75,11 +72,9 @@ const elements = {
   yokaiMessage: document.getElementById("yokai-message"),
   homeMetrics: document.getElementById("home-metrics"),
   bookForm: document.getElementById("book-form"),
-  coverInput: document.getElementById("cover-input"),
   titleInput: document.getElementById("title-input"),
   authorInput: document.getElementById("author-input"),
-  totalInput: document.getElementById("total-input"),
-  currentInput: document.getElementById("current-input"),
+  learningGoalInput: document.getElementById("learning-goal-input"),
   bookSubmit: document.getElementById("book-submit"),
   bookCancel: document.getElementById("book-cancel"),
   bookList: document.getElementById("book-list"),
@@ -93,8 +88,7 @@ const elements = {
   timerStart: document.getElementById("timer-start"),
   timerFinish: document.getElementById("timer-finish"),
   sessionForm: document.getElementById("session-form"),
-  startPageInput: document.getElementById("start-page-input"),
-  endPageInput: document.getElementById("end-page-input"),
+  sessionPagesReadInput: document.getElementById("session-pages-read-input"),
   memoInput: document.getElementById("memo-input"),
   memoBookTabs: document.getElementById("memo-book-tabs"),
   memoList: document.getElementById("memo-list"),
@@ -180,8 +174,7 @@ function fileDate(dateValue = new Date()) {
 function totals() {
   const minutes = state.sessions.reduce((sum, session) => sum + Number(session.minutes || 0), 0);
   const pages = state.sessions.reduce((sum, session) => sum + Number(session.pages || 0), 0);
-  const finished = state.books.filter((book) => book.status === "finished").length;
-  return { minutes, pages, finished, memos: state.memos.length };
+  return { minutes, pages, books: state.books.length, memos: state.memos.length };
 }
 
 function setYokai(mood) {
@@ -233,7 +226,7 @@ function renderHome() {
   const metrics = [
     ["読書時間", formatMinutes(summary.minutes)],
     ["読んだページ", `${summary.pages.toLocaleString()}ページ`],
-    ["読了した本", `${summary.finished}冊`],
+    ["登録した本", `${summary.books}冊`],
     ["読書メモ", `${summary.memos}個`],
   ];
   elements.homeMetrics.replaceChildren(
@@ -258,7 +251,7 @@ function renderBooks() {
       const bookSessions = state.sessions.filter((session) => session.bookId === book.id);
       const minutes = bookSessions.reduce((sum, session) => sum + Number(session.minutes || 0), 0);
       const memoCount = state.memos.filter((memo) => memo.bookId === book.id).length;
-      const percent = Math.min(100, Math.round((book.currentPage / book.totalPages) * 100) || 0);
+      const learningGoal = book.learningGoal || "この本で知りたいことは未設定です。";
       const sessionRows = bookSessions
         .slice()
         .sort((a, b) => new Date(b.date) - new Date(a.date))
@@ -277,12 +270,13 @@ function renderBooks() {
       const card = document.createElement("article");
       card.className = "book-card";
       card.innerHTML = `
-        <div class="cover">${book.coverImage ? `<img alt="" src="${book.coverImage}">` : "本"}</div>
         <div>
           <h3>${escapeHtml(book.title)}</h3>
-          <p class="book-meta">${escapeHtml(book.author || "著者未設定")} ・ ${book.status === "finished" ? "読了済み" : "読書中"}</p>
-          <div class="progress" aria-label="${percent}%"><span style="width:${percent}%"></span></div>
-          <p class="book-meta">${book.currentPage} / ${book.totalPages}ページ ・ ${percent}%</p>
+          <p class="book-meta">${escapeHtml(book.author || "著者未設定")}</p>
+          <div class="book-purpose">
+            <span>この本で知りたいこと</span>
+            <p>${escapeHtml(learningGoal)}</p>
+          </div>
           <div class="book-stats">
             <span>読書時間: ${formatMinutes(minutes)}</span>
             <span>メモ: ${memoCount}個</span>
@@ -323,8 +317,6 @@ function renderBookFormMode() {
 function resetBookForm() {
   editingBookId = "";
   elements.bookForm.reset();
-  elements.totalInput.value = 300;
-  elements.currentInput.value = 0;
   renderBookFormMode();
 }
 
@@ -332,11 +324,9 @@ function startBookEdit(bookId) {
   const book = state.books.find((item) => item.id === bookId);
   if (!book) return;
   editingBookId = book.id;
-  elements.coverInput.value = book.coverImage || "";
   elements.titleInput.value = book.title || "";
   elements.authorInput.value = book.author || "";
-  elements.totalInput.value = book.totalPages || 1;
-  elements.currentInput.value = book.currentPage || 0;
+  elements.learningGoalInput.value = book.learningGoal || "";
   renderBookFormMode();
   elements.bookForm.scrollIntoView({ behavior: "smooth", block: "start" });
 }
@@ -379,12 +369,11 @@ function saveSessionEdit(event) {
   const pages = Math.max(0, Number(elements.sessionPagesInput.value || 0));
   session.minutes = minutes;
   session.pages = pages;
-  session.endPage = Number(session.startPage || 0) + pages;
+  session.startPage = null;
+  session.endPage = null;
   session.updatedAt = new Date().toISOString();
   const book = state.books.find((item) => item.id === session.bookId);
   if (book) {
-    book.currentPage = Math.min(book.totalPages, Math.max(Number(book.currentPage || 0), Number(session.endPage || 0)));
-    book.status = book.currentPage >= book.totalPages ? "finished" : "reading";
     book.updatedAt = session.updatedAt;
   }
   resetSessionEdit();
@@ -405,11 +394,8 @@ function deleteSession(sessionId) {
 function editMemo(memoId) {
   const memo = state.memos.find((item) => item.id === memoId);
   if (!memo) return;
-  const pageValue = window.prompt("ページを編集", memo.page || 0);
-  if (pageValue === null) return;
-  const textValue = window.prompt("メモを編集", memo.text || "");
+  const textValue = window.prompt("この本で得た知識を編集", memo.text || "");
   if (textValue === null) return;
-  memo.page = Math.max(0, Number(pageValue || 0));
   memo.text = textValue.trim();
   memo.updatedAt = new Date().toISOString();
   saveState();
@@ -483,7 +469,7 @@ function renderMemos() {
       const card = document.createElement("article");
       card.className = "memo-card";
       card.innerHTML = `
-        <time>${shortDate(memo.date)} ・ p.${memo.page || 0}</time>
+        <time>${shortDate(memo.date)}</time>
         <p>${escapeHtml(memo.text)}</p>
         <div class="card-actions">
           <button type="button" data-edit-memo="${memo.id}">メモを編集</button>
@@ -612,11 +598,7 @@ function finishTimer(playSound = false) {
   elements.timerStart.textContent = "再開";
   elements.sessionForm.classList.remove("hidden");
   if (playSound) playWaterDropAlarm();
-  const book = state.books.find((item) => item.id === elements.timerBook.value) || state.books[0];
-  if (book) {
-    elements.startPageInput.value = book.currentPage;
-    elements.endPageInput.value = Math.min(book.totalPages, book.currentPage + 10);
-  }
+  elements.sessionPagesReadInput.value = 0;
   updateTimerDisplay();
 }
 
@@ -683,9 +665,7 @@ function saveSession(event) {
   event.preventDefault();
   const book = state.books.find((item) => item.id === elements.timerBook.value);
   if (!book) return;
-  const startPage = Math.max(0, Number(elements.startPageInput.value || book.currentPage));
-  const endPage = Math.max(startPage, Number(elements.endPageInput.value || startPage));
-  const pages = Math.max(0, endPage - startPage);
+  const pages = Math.max(0, Number(elements.sessionPagesReadInput.value || 0));
   const minutes = Math.max(1, Math.round((timer.totalSeconds - timer.remainingSeconds) / 60) || Math.round(timer.totalSeconds / 60));
   const now = new Date().toISOString();
 
@@ -694,14 +674,12 @@ function saveSession(event) {
     bookId: book.id,
     date: now,
     minutes,
-    startPage,
-    endPage,
+    startPage: null,
+    endPage: null,
     pages,
     createdAt: now,
   });
 
-  book.currentPage = Math.min(book.totalPages, endPage);
-  book.status = book.currentPage >= book.totalPages ? "finished" : "reading";
   book.updatedAt = now;
 
   const text = elements.memoInput.value.trim();
@@ -710,7 +688,7 @@ function saveSession(event) {
       id: uid("memo"),
       bookId: book.id,
       date: now,
-      page: endPage,
+      page: null,
       text,
       createdAt: now,
       updatedAt: now,
@@ -719,6 +697,7 @@ function saveSession(event) {
 
   selectedMemoBookId = book.id;
   saveState();
+  elements.sessionPagesReadInput.value = 0;
   elements.memoInput.value = "";
   elements.sessionForm.classList.add("hidden");
   pendingMood = "done";
@@ -728,17 +707,12 @@ function saveSession(event) {
 
 function addBook(event) {
   event.preventDefault();
-  const totalPages = Math.max(1, Number(elements.totalInput.value || 1));
-  const currentPage = Math.min(totalPages, Math.max(0, Number(elements.currentInput.value || 0)));
   const now = new Date().toISOString();
   const existingBook = state.books.find((item) => item.id === editingBookId);
   if (existingBook) {
     existingBook.title = elements.titleInput.value.trim();
     existingBook.author = elements.authorInput.value.trim();
-    existingBook.coverImage = elements.coverInput.value.trim();
-    existingBook.totalPages = totalPages;
-    existingBook.currentPage = currentPage;
-    existingBook.status = currentPage >= totalPages ? "finished" : "reading";
+    existingBook.learningGoal = elements.learningGoalInput.value.trim();
     existingBook.updatedAt = now;
     selectedMemoBookId = existingBook.id;
     saveState();
@@ -751,10 +725,7 @@ function addBook(event) {
     id: uid("book"),
     title: elements.titleInput.value.trim(),
     author: elements.authorInput.value.trim(),
-    coverImage: elements.coverInput.value.trim(),
-    totalPages,
-    currentPage,
-    status: currentPage >= totalPages ? "finished" : "reading",
+    learningGoal: elements.learningGoalInput.value.trim(),
     createdAt: now,
     updatedAt: now,
   };
@@ -856,14 +827,14 @@ function csvCell(value) {
 }
 
 async function exportNotionCsv() {
-  const header = ["Book", "Author", "Date", "Page", "Memo"];
+  const header = ["Book", "Author", "Learning Goal", "Date", "Knowledge"];
   const rows = state.memos.map((memo) => {
     const book = state.books.find((item) => item.id === memo.bookId);
     return [
       book?.title || "未設定の本",
       book?.author || "",
+      book?.learningGoal || "",
       dateKey(memo.date),
-      memo.page || "",
       memo.text || "",
     ];
   });
@@ -894,8 +865,9 @@ async function exportEvernoteMarkdown() {
     if (!memos.length) return;
     lines.push(`## ${book.title || "未設定の本"}`, "");
     if (book.author) lines.push(`著者: ${book.author}`, "");
+    if (book.learningGoal) lines.push(`この本で知りたいこと: ${book.learningGoal}`, "");
     memos.forEach((memo) => {
-      lines.push(`### ${dateKey(memo.date)} / p.${memo.page || "-"}`, "");
+      lines.push(`### ${dateKey(memo.date)}`, "");
       lines.push(memo.text || "", "");
     });
   });
