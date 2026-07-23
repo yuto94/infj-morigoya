@@ -525,29 +525,7 @@ fieldset {
 }
 
 .book-card {
-  display: grid;
-  grid-template-columns: 76px 1fr;
-  gap: 14px;
   padding: 14px;
-}
-
-.cover {
-  width: 76px;
-  aspect-ratio: 3 / 4;
-  display: grid;
-  place-items: center;
-  overflow: hidden;
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  background: var(--panel-2);
-  color: var(--ink);
-  font-size: 26px;
-}
-
-.cover img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
 }
 
 .book-card h3 {
@@ -561,26 +539,33 @@ fieldset {
   font-size: 13px;
 }
 
-.progress {
-  height: 10px;
-  margin: 10px 0;
-  overflow: hidden;
-  border-radius: 999px;
-  background: var(--panel-2);
-}
-
-.progress span {
-  display: block;
-  height: 100%;
-  background: var(--leaf);
-}
-
 .book-stats {
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
   color: var(--muted);
   font-size: 13px;
+}
+
+.book-purpose {
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: #fbf4e8;
+}
+
+.book-purpose span {
+  display: block;
+  color: var(--gold);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.book-purpose p {
+  margin: 6px 0 0;
+  color: var(--ink);
+  line-height: 1.6;
 }
 
 .card-actions {
@@ -857,15 +842,6 @@ dialog p {
 }
 
 @media (max-width: 420px) {
-  .book-card {
-    grid-template-columns: 62px 1fr;
-    gap: 11px;
-  }
-
-  .cover {
-    width: 62px;
-  }
-
   .metric-card strong {
     font-size: 25px;
   }
