@@ -31,10 +31,6 @@
 
       <section class="screen" id="shelf-screen" data-title="本棚">
         <form class="form-panel" id="book-form">
-          <label>
-            表紙画像URL
-            <input id="cover-input" type="url" placeholder="空欄でもOK" />
-          </label>
           <div class="form-grid">
             <label>
               タイトル
@@ -45,16 +41,10 @@
               <input id="author-input" placeholder="著者名" />
             </label>
           </div>
-          <div class="form-grid">
-            <label>
-              総ページ
-              <input id="total-input" required type="number" min="1" value="300" />
-            </label>
-            <label>
-              現在ページ
-              <input id="current-input" type="number" min="0" value="0" />
-            </label>
-          </div>
+          <label>
+            この本で知りたいこと
+            <textarea id="learning-goal-input" rows="3" placeholder="この本から受け取りたいことをひとつだけ"></textarea>
+          </label>
           <div class="form-actions">
             <button class="primary" id="book-submit" type="submit">本を登録</button>
             <button class="hidden" id="book-cancel" type="button">編集をやめる</button>
@@ -91,19 +81,13 @@
           </div>
         </div>
         <form class="form-panel hidden" id="session-form">
-          <div class="form-grid">
-            <label>
-              開始ページ
-              <input id="start-page-input" type="number" min="0" value="0" />
-            </label>
-            <label>
-              終了ページ
-              <input id="end-page-input" type="number" min="0" value="0" />
-            </label>
-          </div>
           <label>
-            今日残したいこと
-            <textarea id="memo-input" rows="4" placeholder="心に残ったことを少しだけ"></textarea>
+            読んだページ
+            <input id="session-pages-read-input" type="number" min="0" value="0" />
+          </label>
+          <label>
+            この本で得た知識
+            <textarea id="memo-input" rows="4" placeholder="知ったこと、使えそうなことを少しだけ"></textarea>
           </label>
           <button class="primary" type="submit">保存する</button>
         </form>
