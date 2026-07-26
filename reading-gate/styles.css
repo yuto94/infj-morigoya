@@ -650,6 +650,7 @@ fieldset {
   display: flex;
   gap: 8px;
   overflow-x: auto;
+  margin-top: 14px;
   padding-bottom: 8px;
 }
 
@@ -671,8 +672,15 @@ fieldset {
 }
 
 .memo-card time {
-  display: block;
+  display: inline-block;
   color: var(--gold);
+  font-size: 13px;
+}
+
+.memo-page {
+  display: inline-block;
+  margin-left: 8px;
+  color: var(--muted);
   font-size: 13px;
 }
 
