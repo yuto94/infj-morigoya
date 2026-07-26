@@ -43,7 +43,7 @@ const defaultState = {
 };
 
 let state = loadState();
-let activeScreen = "home";
+let activeScreen = "memos";
 let selectedMemoBookId = state.books[0]?.id || "";
 let activeRange = 7;
 let pendingMood = null;
@@ -51,8 +51,7 @@ let editingBookId = "";
 let editingSessionId = "";
 let timer = {
   mode: "reading",
-  totalSeconds: state.settings.readingMinutes * 60,
-  remainingSeconds: state.settings.readingMinutes * 60,
+  elapsedSeconds: 0,
   running: false,
   interval: null,
   startedAt: null,
@@ -88,8 +87,13 @@ const elements = {
   timerStart: document.getElementById("timer-start"),
   timerFinish: document.getElementById("timer-finish"),
   sessionForm: document.getElementById("session-form"),
+  sessionMinutesReadInput: document.getElementById("session-minutes-read-input"),
   sessionPagesReadInput: document.getElementById("session-pages-read-input"),
   memoInput: document.getElementById("memo-input"),
+  quickMemoForm: document.getElementById("quick-memo-form"),
+  quickMemoBook: document.getElementById("quick-memo-book"),
+  quickMemoPageInput: document.getElementById("quick-memo-page-input"),
+  quickMemoInput: document.getElementById("quick-memo-input"),
   memoBookTabs: document.getElementById("memo-book-tabs"),
   memoList: document.getElementById("memo-list"),
   minutesChart: document.getElementById("minutes-chart"),
@@ -341,6 +345,7 @@ function deleteBook(bookId) {
   if (editingBookId === bookId) resetBookForm();
   if (selectedMemoBookId === bookId) selectedMemoBookId = state.books[0]?.id || "";
   if (elements.timerBook.value === bookId) resetTimerLength();
+  if (elements.quickMemoBook.value === bookId) selectedMemoBookId = state.books[0]?.id || "";
   saveState();
   render();
 }
@@ -412,7 +417,18 @@ function deleteMemo(memoId) {
 }
 
 function renderTimerBooks() {
+  const selectedTimerBook = elements.timerBook.value;
+  const selectedQuickMemoBook = elements.quickMemoBook.value || selectedMemoBookId;
+
   elements.timerBook.replaceChildren(
+    ...state.books.map((book) => {
+      const option = document.createElement("option");
+      option.value = book.id;
+      option.textContent = book.title;
+      return option;
+    }),
+  );
+  elements.quickMemoBook.replaceChildren(
     ...state.books.map((book) => {
       const option = document.createElement("option");
       option.value = book.id;
@@ -425,11 +441,18 @@ function renderTimerBooks() {
     const option = document.createElement("option");
     option.textContent = "本棚で本を登録してください";
     elements.timerBook.append(option);
+    elements.quickMemoBook.append(option.cloneNode(true));
     elements.timerStart.disabled = true;
     elements.timerFinish.disabled = true;
+    elements.quickMemoBook.disabled = true;
+    elements.quickMemoForm.querySelector("button[type='submit']").disabled = true;
   } else {
+    if (state.books.some((book) => book.id === selectedTimerBook)) elements.timerBook.value = selectedTimerBook;
+    if (state.books.some((book) => book.id === selectedQuickMemoBook)) elements.quickMemoBook.value = selectedQuickMemoBook;
     elements.timerStart.disabled = false;
     elements.timerFinish.disabled = false;
+    elements.quickMemoBook.disabled = false;
+    elements.quickMemoForm.querySelector("button[type='submit']").disabled = false;
   }
 }
 
@@ -470,6 +493,7 @@ function renderMemos() {
       card.className = "memo-card";
       card.innerHTML = `
         <time>${shortDate(memo.date)}</time>
+        ${Number(memo.page || 0) > 0 ? `<span class="memo-page">p.${Number(memo.page || 0)}</span>` : ""}
         <p>${escapeHtml(memo.text)}</p>
         <div class="card-actions">
           <button type="button" data-edit-memo="${memo.id}">メモを編集</button>
@@ -558,14 +582,13 @@ function startReadingTimer(minutes = state.settings.readingMinutes) {
   clearInterval(timer.interval);
   timer = {
     mode: "reading",
-    totalSeconds: minutes * 60,
-    remainingSeconds: minutes * 60,
+    elapsedSeconds: 0,
     running: false,
     interval: null,
     startedAt: null,
   };
   elements.sessionForm.classList.add("hidden");
-  elements.timerLabel.textContent = "読書中";
+  elements.timerLabel.textContent = "読書時間";
   elements.timerStart.textContent = "開始";
   updateTimerDisplay();
   navigate("timer");
@@ -585,25 +608,25 @@ function toggleTimer() {
   timer.startedAt = timer.startedAt || Date.now();
   elements.timerStart.textContent = "一時停止";
   timer.interval = setInterval(() => {
-    timer.remainingSeconds -= 1;
+    timer.elapsedSeconds += 1;
     updateTimerDisplay();
-    if (timer.remainingSeconds <= 0) finishTimer(true);
   }, 1000);
 }
 
 function finishTimer(playSound = false) {
   clearInterval(timer.interval);
   timer.running = false;
-  timer.remainingSeconds = Math.max(0, timer.remainingSeconds);
+  timer.elapsedSeconds = Math.max(0, timer.elapsedSeconds);
   elements.timerStart.textContent = "再開";
   elements.sessionForm.classList.remove("hidden");
   if (playSound) playWaterDropAlarm();
+  elements.sessionMinutesReadInput.value = Math.max(1, Math.round(timer.elapsedSeconds / 60));
   elements.sessionPagesReadInput.value = 0;
   updateTimerDisplay();
 }
 
 function updateTimerDisplay() {
-  elements.timerTime.textContent = formatTimer(timer.remainingSeconds);
+  elements.timerTime.textContent = formatTimer(timer.elapsedSeconds);
 }
 
 function prepareAudio() {
@@ -666,7 +689,7 @@ function saveSession(event) {
   const book = state.books.find((item) => item.id === elements.timerBook.value);
   if (!book) return;
   const pages = Math.max(0, Number(elements.sessionPagesReadInput.value || 0));
-  const minutes = Math.max(1, Math.round((timer.totalSeconds - timer.remainingSeconds) / 60) || Math.round(timer.totalSeconds / 60));
+  const minutes = Math.max(1, Number(elements.sessionMinutesReadInput.value || 1));
   const now = new Date().toISOString();
 
   state.sessions.push({
@@ -688,7 +711,7 @@ function saveSession(event) {
       id: uid("memo"),
       bookId: book.id,
       date: now,
-      page: null,
+      page: pages || null,
       text,
       createdAt: now,
       updatedAt: now,
@@ -697,12 +720,42 @@ function saveSession(event) {
 
   selectedMemoBookId = book.id;
   saveState();
+  elements.sessionMinutesReadInput.value = 1;
   elements.sessionPagesReadInput.value = 0;
   elements.memoInput.value = "";
   elements.sessionForm.classList.add("hidden");
+  resetTimerLength();
   pendingMood = "done";
   render();
-  navigate("home");
+  navigate("memos");
+}
+
+function saveQuickMemo(event) {
+  event.preventDefault();
+  const book = state.books.find((item) => item.id === elements.quickMemoBook.value);
+  if (!book) return;
+  const text = elements.quickMemoInput.value.trim();
+  if (!text) return;
+  const now = new Date().toISOString();
+  const page = Math.max(0, Number(elements.quickMemoPageInput.value || 0));
+
+  state.memos.push({
+    id: uid("memo"),
+    bookId: book.id,
+    date: now,
+    page: page || null,
+    text,
+    createdAt: now,
+    updatedAt: now,
+  });
+
+  book.updatedAt = now;
+  selectedMemoBookId = book.id;
+  saveState();
+  elements.quickMemoPageInput.value = 0;
+  elements.quickMemoInput.value = "";
+  pendingMood = "done";
+  render();
 }
 
 function addBook(event) {
@@ -827,7 +880,7 @@ function csvCell(value) {
 }
 
 async function exportNotionCsv() {
-  const header = ["Book", "Author", "Learning Goal", "Date", "Knowledge"];
+  const header = ["Book", "Author", "Learning Goal", "Date", "Page", "Knowledge"];
   const rows = state.memos.map((memo) => {
     const book = state.books.find((item) => item.id === memo.bookId);
     return [
@@ -835,6 +888,7 @@ async function exportNotionCsv() {
       book?.author || "",
       book?.learningGoal || "",
       dateKey(memo.date),
+      memo.page || "",
       memo.text || "",
     ];
   });
@@ -868,6 +922,7 @@ async function exportEvernoteMarkdown() {
     if (book.learningGoal) lines.push(`この本で知りたいこと: ${book.learningGoal}`, "");
     memos.forEach((memo) => {
       lines.push(`### ${dateKey(memo.date)}`, "");
+      if (memo.page) lines.push(`ページ: p.${memo.page}`, "");
       lines.push(memo.text || "", "");
     });
   });
@@ -920,8 +975,10 @@ function importBackup(event) {
 
 function resetTimerLength() {
   if (timer.running) return;
-  timer.totalSeconds = state.settings.readingMinutes * 60;
-  timer.remainingSeconds = timer.totalSeconds;
+  timer.elapsedSeconds = 0;
+  timer.startedAt = null;
+  elements.timerStart.textContent = "開始";
+  elements.sessionForm.classList.add("hidden");
   updateTimerDisplay();
 }
 
@@ -1002,8 +1059,9 @@ elements.bookCancel.addEventListener("click", resetBookForm);
 elements.sessionEditForm.addEventListener("submit", saveSessionEdit);
 elements.sessionCancel.addEventListener("click", resetSessionEdit);
 elements.timerStart.addEventListener("click", toggleTimer);
-elements.timerFinish.addEventListener("click", finishTimer);
+elements.timerFinish.addEventListener("click", () => finishTimer(false));
 elements.sessionForm.addEventListener("submit", saveSession);
+elements.quickMemoForm.addEventListener("submit", saveQuickMemo);
 elements.settingsForm.addEventListener("submit", saveSettings);
 elements.exportBackup.addEventListener("click", exportBackup);
 elements.importBackup.addEventListener("click", openImportBackup);
@@ -1013,4 +1071,3 @@ elements.exportEvernote.addEventListener("click", exportEvernoteMarkdown);
 
 updateTimerDisplay();
 render();
-window.setTimeout(openGate, 300);
