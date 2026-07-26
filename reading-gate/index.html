@@ -3,7 +3,13 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f3eadb" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="読書ゲート" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <title>読書ゲート</title>
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../%E3%82%B9%E3%82%AF%E3%83%AA%E3%83%BC%E3%83%B3%E3%82%B7%E3%83%A7%E3%83%83%E3%83%88%202026-07-13%2018.28.53.png" />
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
@@ -185,5 +191,12 @@
     </dialog>
 
     <script src="game.js"></script>
+    <script>
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+          navigator.serviceWorker.register("./sw.js").catch(() => {});
+        });
+      }
+    </script>
   </body>
 </html>
