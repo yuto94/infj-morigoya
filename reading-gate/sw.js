@@ -1,4 +1,4 @@
-const CACHE_NAME = "reading-gate-pwa-v1";
+const CACHE_NAME = "reading-gate-pwa-v2";
 const APP_SHELL = [
   "./",
   "./index.html",
