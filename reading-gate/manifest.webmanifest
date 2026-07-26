@@ -1,0 +1,25 @@
+{
+  "name": "読書ゲート",
+  "short_name": "読書ゲート",
+  "description": "スマホを見る前に、本を読む選択肢を置く読書ツール。",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f3eadb",
+  "theme_color": "#f3eadb",
+  "icons": [
+    {
+      "src": "../%E3%82%B9%E3%82%AF%E3%83%AA%E3%83%BC%E3%83%B3%E3%82%B7%E3%83%A7%E3%83%83%E3%83%88%202026-07-13%2018.28.53.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "../%E3%82%B9%E3%82%AF%E3%83%AA%E3%83%BC%E3%83%B3%E3%82%B7%E3%83%A7%E3%83%83%E3%83%88%202026-07-13%2018.28.53.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
