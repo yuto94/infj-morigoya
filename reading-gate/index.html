@@ -26,10 +26,11 @@
         <p id="yokai-message">静かに、そばにいる。</p>
       </section>
 
-      <section class="screen active" id="home-screen" data-title="ホーム">
+      <section class="screen" id="home-screen" data-title="ホーム">
         <div class="metric-grid" id="home-metrics"></div>
         <div class="quick-row">
-          <button class="primary" type="button" data-start-reading>15分読む</button>
+          <button class="primary" type="button" data-nav="memos">メモを書く</button>
+          <button type="button" data-start-reading>読書を始める</button>
           <button type="button" data-nav="shelf">本棚へ</button>
           <button class="gate-button" id="open-gate" type="button">SNSを開きそう</button>
         </div>
@@ -78,15 +79,19 @@
 
       <section class="screen" id="timer-screen" data-title="読書タイマー">
         <div class="timer-card">
-          <p class="timer-label" id="timer-label">読書中</p>
-          <div class="timer-time" id="timer-time">15:00</div>
+          <p class="timer-label" id="timer-label">読書時間</p>
+          <div class="timer-time" id="timer-time">00:00</div>
           <select id="timer-book"></select>
           <div class="timer-actions">
             <button class="primary" id="timer-start" type="button">開始</button>
-            <button id="timer-finish" type="button">記録へ</button>
+            <button id="timer-finish" type="button">読書を終える</button>
           </div>
         </div>
         <form class="form-panel hidden" id="session-form">
+          <label>
+            読書時間
+            <input id="session-minutes-read-input" type="number" min="1" value="1" />
+          </label>
           <label>
             読んだページ
             <input id="session-pages-read-input" type="number" min="0" value="0" />
@@ -99,7 +104,23 @@
         </form>
       </section>
 
-      <section class="screen" id="memos-screen" data-title="本ごとの読書メモ">
+      <section class="screen active" id="memos-screen" data-title="本ごとの読書メモ">
+        <form class="form-panel quick-memo-panel" id="quick-memo-form">
+          <h2>メモを書く</h2>
+          <label>
+            本
+            <select id="quick-memo-book"></select>
+          </label>
+          <label>
+            ページ
+            <input id="quick-memo-page-input" type="number" min="0" value="0" />
+          </label>
+          <label>
+            この本で得た知識
+            <textarea id="quick-memo-input" rows="5" placeholder="今残したいことを少しだけ"></textarea>
+          </label>
+          <button class="primary" type="submit">メモを保存</button>
+        </form>
         <div class="book-tabs" id="memo-book-tabs"></div>
         <div class="memo-list" id="memo-list"></div>
       </section>
@@ -158,10 +179,10 @@
       </section>
 
       <nav class="bottom-nav" aria-label="画面切り替え">
-        <button class="active" type="button" data-nav="home">ホーム</button>
+        <button type="button" data-nav="home">ホーム</button>
         <button type="button" data-nav="shelf">本棚</button>
         <button type="button" data-nav="timer">タイマー</button>
-        <button type="button" data-nav="memos">メモ</button>
+        <button class="active" type="button" data-nav="memos">メモ</button>
         <button type="button" data-nav="graphs">グラフ</button>
         <button type="button" data-nav="settings">設定</button>
       </nav>
